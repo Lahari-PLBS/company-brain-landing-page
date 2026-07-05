@@ -1,0 +1,14 @@
+Project Atlas Weekly Meeting
+Date: 2026-07-01
+
+The team reviewed launch readiness for Project Atlas. The dashboard frontend is complete, but backend search integration is still pending due to missing API credentials from the infrastructure vendor.
+
+Decision: shift the internal launch by one week to July 12.
+Decision: Priya will follow up with the vendor for API credentials.
+
+Action items:
+- Arjun to finish search API integration.
+- Neha to validate export reports.
+- Priya to get credentials by Friday.
+
+Risk: if credentials do not arrive this week, the launch will slip again.

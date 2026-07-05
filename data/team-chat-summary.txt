@@ -1,0 +1,6 @@
+Team Chat Summary - Project Atlas
+Date: 2026-07-04
+
+There is confusion about who owns the knowledge indexing pipeline. Some team members think Arjun owns it, while others believe the platform team is responsible.
+
+The team also mentioned that requirements changed for dashboard exports, but no formal documentation was shared.

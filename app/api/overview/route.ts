@@ -1,0 +1,89 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { chunkFiles } from '@/lib/chunk'
+import { buildInsightsPrompt } from '@/lib/prompts'
+import { ai } from '@/lib/gemini'
+
+export async function GET() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data: files, error } = await supabase
+      .from('files')
+      .select('*')
+      .eq('user_id', user.id)
+
+    if (error) {
+      console.error('Error fetching files:', error)
+      return NextResponse.json({ error: 'Failed to fetch files' }, { status: 500 })
+    }
+
+    if (!files || files.length === 0) {
+      return NextResponse.json({
+        insights: {
+          decisions: [],
+          pending_tasks: [],
+          risks: [],
+          missing_documentation: [],
+          duplicate_work: []
+        }
+      })
+    }
+
+    // Map DB files to the format expected by chunkFiles
+    const formattedFiles = files.map(f => ({
+      name: f.file_name,
+      content: f.content,
+      project: 'Workspace'
+    }))
+
+    const chunks = chunkFiles(formattedFiles)
+    // For overview, we might just take a representative sample of chunks if there are too many
+    // to avoid token limits. For now, let's take up to 20 chunks (approx 20k tokens)
+    const contextChunks = chunks.slice(0, 20)
+    const context = contextChunks.map((c) => `[${c.fileName}] ${c.text}`).join('\n\n')
+
+    const generateWithRetry = async (params: any, retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          return await ai.models.generateContent(params);
+        } catch (error: any) {
+          if (i === retries - 1) throw error;
+          if (error?.status === 503 || error?.status === 429) {
+            await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
+            continue;
+          }
+          throw error;
+        }
+      }
+      throw new Error('Failed to generate content after retries');
+    };
+
+    const insightsCompletion = await generateWithRetry({
+      model: 'gemini-2.0-flash-lite',
+      contents: buildInsightsPrompt(context),
+      config: {
+        temperature: 0,
+        responseMimeType: 'application/json',
+      }
+    });
+
+    const insightsText = insightsCompletion.text || '{}'
+    let insights = {}
+    try {
+      insights = JSON.parse(insightsText)
+    } catch (e) {
+      console.error('Failed to parse insights JSON', e)
+    }
+
+    return NextResponse.json({ insights })
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
+}

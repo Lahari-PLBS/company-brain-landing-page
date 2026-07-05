@@ -1,0 +1,6 @@
+Subject: Project Atlas Reporting and Security
+Date: 2026-07-02
+
+The client requested CSV and PDF export from the analytics dashboard. They also raised a concern about role-based access for sensitive data views.
+
+Approval for the export feature is pending from the compliance team.

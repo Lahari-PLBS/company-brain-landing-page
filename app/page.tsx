@@ -1,7 +1,5 @@
 'use client'
 
-import { Header } from '@/components/header'
-import { Footer } from '@/components/footer'
 import { CTAButton } from '@/components/cta-button'
 import { FeatureCard } from '@/components/feature-card'
 import { DashboardCard } from '@/components/dashboard-card'
@@ -14,6 +12,7 @@ import {
   Zap,
   TrendingUp,
 } from 'lucide-react'
+import Link from 'next/link'
 
 const features = [
   {
@@ -70,7 +69,6 @@ const useCases = [
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
@@ -95,12 +93,16 @@ export default function Home() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <CTAButton variant="primary" size="lg">
-                  Try Demo
-                </CTAButton>
-                <CTAButton variant="secondary" size="lg">
-                  See How It Works
-                </CTAButton>
+                <Link href="/dashboard" className="inline-flex">
+                  <CTAButton variant="primary" size="lg">
+                    Try Demo
+                  </CTAButton>
+                </Link>
+                <Link href="/login" className="inline-flex">
+                  <CTAButton variant="secondary" size="lg">
+                    Sign In
+                  </CTAButton>
+                </Link>
               </div>
             </div>
 
@@ -337,12 +339,12 @@ export default function Home() {
         <p className="text-lg text-brand-secondary mb-8 max-w-2xl mx-auto">
           Join modern teams that are using Company Brain to unlock their collective intelligence
         </p>
-        <CTAButton variant="primary" size="lg">
-          Launch Demo
-        </CTAButton>
+        <Link href="/dashboard" className="inline-flex">
+          <CTAButton variant="primary" size="lg">
+            Launch Demo
+          </CTAButton>
+        </Link>
       </section>
-
-      <Footer />
     </div>
   )
 }

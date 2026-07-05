@@ -1,6 +1,8 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
 
 export const metadata: Metadata = {
   title: 'Company Brain - Centralized AI Memory for Organizations',
@@ -20,8 +22,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="antialiased bg-white text-brand-primary">
-        {children}
+      <body className="antialiased bg-white text-brand-primary min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1">
+          {children}
+        </div>
+        <Footer />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

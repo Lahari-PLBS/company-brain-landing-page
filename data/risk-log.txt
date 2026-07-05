@@ -1,0 +1,8 @@
+Risk Log - Project Atlas
+Date: 2026-07-03
+
+Open Risks:
+1. Missing API credentials from vendor.
+2. Compliance approval not yet received for exports.
+3. No final documentation for search indexing architecture.
+4. Dependency on external vendor may delay testing.
