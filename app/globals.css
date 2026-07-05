@@ -6,7 +6,7 @@
 
 @theme inline {
   --color-brand-primary: #1a0b54;
-  --color-brand-secondary: #83799e;
+  --color-brand-secondary: #5a5266;
   --color-brand-surface: #f9f9f9;
   --color-brand-blue: #2ba7ff;
   --color-brand-purple: #ca45ff;
@@ -64,7 +64,7 @@
   --secondary: #f9f9f9;
   --secondary-foreground: #1a0b54;
   --muted: #f9f9f9;
-  --muted-foreground: #83799e;
+  --muted-foreground: #5a5266;
   --accent: #ca45ff;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
