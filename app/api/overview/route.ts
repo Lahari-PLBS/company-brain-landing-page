@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { chunkFiles } from '@/lib/chunk'
 import { buildInsightsPrompt } from '@/lib/prompts'
-import { ai } from '@/lib/gemini'
-
+import { llm, getModelName } from '@/lib/llm'
 export async function GET() {
   try {
     const supabase = await createClient()
@@ -40,7 +39,7 @@ export async function GET() {
       name: f.file_name,
       content: f.content,
       project: 'Workspace'
-    }))
+    })) as any
 
     const chunks = chunkFiles(formattedFiles)
     // For overview, we might just take a representative sample of chunks if there are too many
@@ -51,7 +50,7 @@ export async function GET() {
     const generateWithRetry = async (params: any, retries = 3) => {
       for (let i = 0; i < retries; i++) {
         try {
-          return await ai.models.generateContent(params);
+          return await llm.chat.completions.create(params);
         } catch (error: any) {
           if (i === retries - 1) throw error;
           if (error?.status === 503 || error?.status === 429) {
@@ -65,15 +64,13 @@ export async function GET() {
     };
 
     const insightsCompletion = await generateWithRetry({
-      model: 'gemini-2.0-flash-lite',
-      contents: buildInsightsPrompt(context),
-      config: {
-        temperature: 0,
-        responseMimeType: 'application/json',
-      }
+      model: getModelName(),
+      messages: [{ role: 'user', content: buildInsightsPrompt(context) }],
+      temperature: 0,
+      response_format: { type: 'json_object' }
     });
 
-    const insightsText = insightsCompletion.text || '{}'
+    const insightsText = insightsCompletion.choices[0].message.content || '{}'
     let insights = {}
     try {
       insights = JSON.parse(insightsText)

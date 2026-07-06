@@ -12,6 +12,7 @@ create table public.files (
 create table public.queries (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id) on delete cascade not null,
+  conversation_id uuid default gen_random_uuid() not null,
   question text not null,
   answer text not null,
   sources jsonb default '[]'::jsonb not null,

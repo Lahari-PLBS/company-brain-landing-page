@@ -1,0 +1,16 @@
+tx_id,date,department,description,category,amount_usd,type
+TX-101,2026-05-01,ADM,Inpatient Billing - General,revenue,45000.00,CREDIT
+TX-102,2026-05-02,CARDIO,Outpatient Consultations,revenue,12500.00,CREDIT
+TX-103,2026-05-03,SYS,Dr. Smith Salary (Surgeon),salary,-18000.00,DEBIT
+TX-104,2026-05-04,SYS,Dr. Jenkins Salary (Cardio),salary,-19500.00,DEBIT
+TX-105,2026-05-05,FAC,City Power & Light,electricity_expenses,-4200.00,DEBIT
+TX-106,2026-05-06,ER,Emergency Care Billing,revenue,28000.00,CREDIT
+TX-107,2026-05-07,CAF,Sysco Catering Supply,food_supplies,-3500.00,DEBIT
+TX-108,2026-05-08,PEDS,Pediatric Ward Billing,revenue,15000.00,CREDIT
+TX-109,2026-05-09,SYS,Nursing Staff Payroll,salary,-42000.00,DEBIT
+TX-110,2026-05-10,ORTHO,Knee Replacement Surgery,revenue,32000.00,CREDIT
+TX-111,2026-05-11,FAC,Water and Sewage Utility,utility,-1100.00,DEBIT
+TX-112,2026-05-12,SYS,Baxter IV Fluids & Meds,medical_supplies,-8500.00,DEBIT
+TX-113,2026-05-13,CAF,Local Produce Delivery,food_supplies,-1200.00,DEBIT
+TX-114,2026-05-14,ER,Trauma Center Billing,revenue,41000.00,CREDIT
+TX-115,2026-05-15,FAC,HVAC Maintenance,maintenance,-2500.00,DEBIT

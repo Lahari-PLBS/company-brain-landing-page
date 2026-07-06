@@ -74,9 +74,9 @@ export default function LoginPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center items-center gap-2 mb-6">
           <div className="w-8 h-8 bg-gradient-to-br from-brand-blue to-brand-purple rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">CB</span>
+            <span className="text-white font-bold text-sm">AA</span>
           </div>
-          <span className="font-bold text-xl text-brand-primary">Company Brain</span>
+          <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-brand-blue to-brand-purple">Alpha Assistant</span>
         </Link>
         <h2 className="text-center text-3xl font-extrabold text-brand-primary">
           {isSignUp ? 'Create your account' : 'Welcome back'}

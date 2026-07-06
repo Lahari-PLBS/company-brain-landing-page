@@ -1,9 +1,10 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { CTAButton } from '@/components/cta-button'
 import { FeatureCard } from '@/components/feature-card'
 import { DashboardCard } from '@/components/dashboard-card'
-import { SourceSnippet } from '@/components/source-snippet'
 import {
   Search,
   CheckCircle,
@@ -67,6 +68,21 @@ const useCases = [
 ]
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
   return (
     <div className="min-h-screen bg-white">
 
@@ -95,14 +111,16 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Link href="/dashboard" className="inline-flex">
                   <CTAButton variant="primary" size="lg">
-                    Try Demo
+                    Demo
                   </CTAButton>
                 </Link>
-                <Link href="/login" className="inline-flex">
-                  <CTAButton variant="secondary" size="lg">
-                    Sign In
-                  </CTAButton>
-                </Link>
+                {!user && (
+                  <Link href="/login" className="inline-flex">
+                    <CTAButton variant="secondary" size="lg">
+                      Sign In
+                    </CTAButton>
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -114,7 +132,7 @@ export default function Home() {
                   <Zap className="w-8 h-8 text-white" />
                 </div>
                 <p className="text-brand-secondary font-medium">
-                  Company Brain Dashboard
+                  AlphaAssistant Dashboard
                 </p>
               </div>
             </div>
@@ -198,116 +216,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Demo Dashboard Section */}
-      <section id="demo" className="max-w-7xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-brand-primary mb-4">
-            Meet Your Company Brain
-          </h2>
-          <p className="text-lg text-brand-secondary">
-            Realistic dashboard showing instant knowledge retrieval
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          {/* Query Input */}
-          <DashboardCard
-            title="Ask Company Brain"
-            variant="highlight"
-            className="border-2 border-brand-blue/20"
-          >
-            <div className="flex gap-3">
-              <input
-                type="text"
-                placeholder="What happened in Project X? Show pending tasks..."
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-200 text-brand-primary placeholder-brand-secondary focus:outline-none focus:border-brand-blue"
-              />
-              <button className="px-6 py-3 bg-gradient-to-r from-brand-blue to-brand-purple text-white rounded-lg font-semibold hover:shadow-lg transition-all">
-                Ask
-              </button>
-            </div>
-          </DashboardCard>
-
-          {/* AI Answer */}
-          <DashboardCard title="AI Answer">
-            <div className="space-y-4">
-              <p className="text-brand-primary leading-relaxed">
-                <strong>Project X Status:</strong> Currently in Phase 2 (Design & Planning). Team expanded by 2 engineers on Sept 15. Expected completion Q4 2024.
-              </p>
-              <div className="bg-blue-50 border-l-4 border-brand-blue p-4 rounded">
-                <p className="text-sm text-brand-secondary">
-                  <strong className="text-brand-primary">Pending Tasks:</strong> Finalize wireframes (Due Oct 1), API integration design (Due Oct 5), Security audit (Due Oct 10)
-                </p>
-              </div>
-            </div>
-          </DashboardCard>
-
-          {/* Source Snippets */}
-          <div>
-            <h4 className="font-semibold text-brand-primary mb-4">Sources</h4>
-            <div className="grid md:grid-cols-2 gap-4">
-              <SourceSnippet
-                source="Email"
-                content="Project X team expanded with 2 senior engineers starting Sept 15"
-                highlight="Sept 15"
-              />
-              <SourceSnippet
-                source="Meeting Notes"
-                content="Q4 delivery target confirmed with stakeholders. Phase 2 design expected to complete by end of September."
-                highlight="Phase 2"
-              />
-              <SourceSnippet
-                source="Task Management"
-                content="Finalize wireframes and API contract by October 1st before development sprint"
-                highlight="October 1st"
-              />
-              <SourceSnippet
-                source="Slack"
-                content="Security audit scheduled for early October. Critical items must be resolved before production."
-                highlight="Security audit"
-              />
-            </div>
-          </div>
-
-          {/* Insights */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <DashboardCard title="Key Decisions">
-              <ul className="space-y-2 text-sm">
-                <li className="flex gap-2">
-                  <CheckCircle className="w-4 h-4 text-brand-purple flex-shrink-0 mt-0.5" />
-                  <span className="text-brand-primary">Expand team for faster delivery</span>
-                </li>
-                <li className="flex gap-2">
-                  <CheckCircle className="w-4 h-4 text-brand-purple flex-shrink-0 mt-0.5" />
-                  <span className="text-brand-primary">Phase 2 by end of September</span>
-                </li>
-                <li className="flex gap-2">
-                  <CheckCircle className="w-4 h-4 text-brand-purple flex-shrink-0 mt-0.5" />
-                  <span className="text-brand-primary">Security audit required pre-launch</span>
-                </li>
-              </ul>
-            </DashboardCard>
-
-            <DashboardCard title="Risks & Gaps">
-              <ul className="space-y-2 text-sm">
-                <li className="flex gap-2">
-                  <AlertTriangle className="w-4 h-4 text-brand-orange flex-shrink-0 mt-0.5" />
-                  <span className="text-brand-primary">Tight timeline for Phase 2</span>
-                </li>
-                <li className="flex gap-2">
-                  <AlertTriangle className="w-4 h-4 text-brand-orange flex-shrink-0 mt-0.5" />
-                  <span className="text-brand-primary">Missing API contract docs</span>
-                </li>
-                <li className="flex gap-2">
-                  <AlertTriangle className="w-4 h-4 text-brand-orange flex-shrink-0 mt-0.5" />
-                  <span className="text-brand-primary">No deployment readiness plan yet</span>
-                </li>
-              </ul>
-            </DashboardCard>
-          </div>
-        </div>
-      </section>
-
       {/* Use Cases */}
       <section id="use-cases" className="bg-brand-surface border-y border-gray-200 py-24">
         <div className="max-w-7xl mx-auto px-6">
@@ -337,7 +245,7 @@ export default function Home() {
           Never Lose Company Knowledge Again
         </h2>
         <p className="text-lg text-brand-secondary mb-8 max-w-2xl mx-auto">
-          Join modern teams that are using Company Brain to unlock their collective intelligence
+          Join modern teams that are using AlphaAssistant to unlock their collective intelligence
         </p>
         <Link href="/dashboard" className="inline-flex">
           <CTAButton variant="primary" size="lg">

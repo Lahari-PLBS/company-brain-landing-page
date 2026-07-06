@@ -5,9 +5,9 @@ export function Footer() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-gradient-to-br from-brand-blue to-brand-purple rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">CB</span>
+              <span className="text-white font-bold text-xs">AA</span>
             </div>
-            <span className="font-semibold text-brand-primary">Company Brain</span>
+            <span className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-brand-blue to-brand-purple">Alpha Assistant</span>
           </div>
           <p className="text-brand-secondary text-sm">
             Hackathon MVP. Turning scattered knowledge into one searchable AI memory.

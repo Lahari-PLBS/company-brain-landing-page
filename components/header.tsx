@@ -38,16 +38,15 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
           <div className="w-8 h-8 bg-gradient-to-br from-brand-blue to-brand-purple rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">CB</span>
+            <span className="text-white font-bold text-sm">AA</span>
           </div>
-          <span className="font-bold text-xl text-brand-primary">Company Brain</span>
+          <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-brand-blue to-brand-purple">Alpha Assistant</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
           {[
             { label: 'Features', id: 'features' },
             { label: 'How it Works', id: 'how-it-works' },
-            { label: 'Demo', id: 'demo' },
             { label: 'Use Cases', id: 'use-cases' },
           ].map((item) => (
             <button
@@ -87,7 +86,7 @@ export function Header() {
               </Link>
               <Link href="/dashboard" className="inline-flex">
                 <CTAButton variant="primary" size="sm">
-                  Try Demo
+                  Demo
                 </CTAButton>
               </Link>
             </div>

@@ -1,0 +1,10 @@
+[2026-05-01] Patient John Doe (ORTHO): The knee replacement went well, but the physical therapy was very painful.
+[2026-05-03] Patient Jane Smith (ER): Wait time was over 4 hours. Unacceptable for an emergency room.
+[2026-05-06] Patient Emily Davis (PEDS): Pediatric nurses were amazing with my daughter. Very friendly staff.
+[2026-05-07] Patient Robert Brown (ADM): Check-in process was too slow, computers kept crashing.
+[2026-05-10] Patient Michael Johnson (CARDIO): Dr. Jenkins is a lifesaver. Excellent bypass surgery recovery.
+[2026-05-11] Patient Linda Moore (ER): The triage nurse was rude, but the doctor was very helpful.
+[2026-05-14] Patient David Taylor (ORTHO): Great surgical team. The food could be better though, tasted like cardboard.
+[2026-05-16] Patient Richard Anderson (ER): Excellent care for my broken arm. Fast x-rays.
+[2026-05-17] Patient Joseph Thomas (PEDS): Very clean ward, kid-friendly environment.
+[2026-05-21] Patient William Wilson (CARDIO): Five stars for the cardiac ICU nurses. True angels.
