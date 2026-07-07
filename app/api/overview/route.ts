@@ -42,9 +42,9 @@ export async function GET() {
     })) as any
 
     const chunks = chunkFiles(formattedFiles)
-    // For overview, we might just take a representative sample of chunks if there are too many
-    // to avoid token limits. For now, let's take up to 20 chunks (approx 20k tokens)
-    const contextChunks = chunks.slice(0, 20)
+    // For overview, we take a representative sample of chunks to avoid token limits.
+    // Limiting to 10 chunks to stay safely under the 8192 token limit for LLaMA 3.
+    const contextChunks = chunks.slice(0, 10)
     const context = contextChunks.map((c) => `[${c.fileName}] ${c.text}`).join('\n\n')
 
     const generateWithRetry = async (params: any, retries = 3) => {
@@ -67,6 +67,7 @@ export async function GET() {
       model: getModelName(),
       messages: [{ role: 'user', content: buildInsightsPrompt(context) }],
       temperature: 0,
+      max_tokens: 1000,
       response_format: { type: 'json_object' }
     });
 
