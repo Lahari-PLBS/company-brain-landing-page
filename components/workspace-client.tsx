@@ -347,51 +347,53 @@ export function WorkspaceClient({
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Your Workspace</h1>
-          <p className="text-sm text-gray-500">Manage knowledge and ask questions across your files</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => fetchOverview()}
-            disabled={isFetchingOverview || files.length === 0}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${isFetchingOverview ? 'animate-spin' : ''}`} />
-            Refresh Overview
-          </button>
-          
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl w-full mx-auto px-6 py-4 flex items-center justify-between">
           <div>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileUpload} 
-              className="hidden" 
-              multiple 
-              accept=".txt,.pdf,.doc,.docx,.csv,.xlsx,.xls"
-            />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-blue rounded-md hover:bg-brand-blue/90 disabled:opacity-50"
-            >
-              <Upload className="w-4 h-4" />
-              {isUploading ? 'Uploading...' : 'Upload Files'}
-            </button>
+            <h1 className="text-2xl font-bold text-gray-900">Your Workspace</h1>
+            <p className="text-sm text-gray-500">Manage knowledge and ask questions across your files</p>
           </div>
-          
-          <div className="w-px h-6 bg-gray-200 mx-1"></div>
-          
-          <form action="/auth/signout" method="POST">
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 bg-white border border-gray-200 rounded-md hover:bg-red-50"
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => fetchOverview()}
+              disabled={isFetchingOverview || files.length === 0}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
             >
-              <LogOut className="w-4 h-4" />
-              Log Out
+              <RefreshCw className={`w-4 h-4 ${isFetchingOverview ? 'animate-spin' : ''}`} />
+              Refresh Overview
             </button>
-          </form>
+            
+            <div>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                className="hidden" 
+                multiple 
+                accept=".txt,.pdf,.doc,.docx,.csv,.xlsx,.xls"
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-blue rounded-md hover:bg-brand-blue/90 disabled:opacity-50"
+              >
+                <Upload className="w-4 h-4" />
+                {isUploading ? 'Uploading...' : 'Upload Files'}
+              </button>
+            </div>
+            
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+            
+            <form action="/auth/signout" method="POST">
+              <button
+                type="submit"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 bg-white border border-gray-200 rounded-md hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4" />
+                Log Out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
