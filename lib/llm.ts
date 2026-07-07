@@ -11,9 +11,12 @@ const timeoutMs = process.env.MISTRAL_TIMEOUT_MS
   : 300000;
 
 export const llm = new OpenAI({
-  baseURL: process.env.MISTRAL_BASE_URL || 'http://localhost:8000/v1',
-  apiKey: process.env.MISTRAL_API_KEY || 'empty',
+  baseURL: process.env.MISTRAL_BASE_URL!,
+  apiKey: process.env.MISTRAL_API_KEY || "ollama",
   timeout: timeoutMs,
+  defaultHeaders: {
+    "ngrok-skip-browser-warning": "true",
+  },
 });
 
 export const getModelName = () => mistralModel;
