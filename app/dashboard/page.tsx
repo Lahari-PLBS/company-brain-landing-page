@@ -153,12 +153,12 @@ export default function DashboardPage() {
                       <p className="text-xs text-[#83799E] mt-0.5 uppercase tracking-wider font-medium">{ext}</p>
                     </div>
                   </div>
-                  <Link href={`/sample-data/${file.fileName}`} target="_blank" className="mt-4 w-full">
+                  <a href={`/sample-data/${file.fileName}`} target="_blank" rel="noopener noreferrer" className="mt-4 w-full">
                     <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-50 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors">
                       <Eye size={16} />
                       View File
                     </button>
-                  </Link>
+                  </a>
                 </div>
               )
             })}
