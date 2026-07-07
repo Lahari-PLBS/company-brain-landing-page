@@ -63,13 +63,28 @@ export async function GET() {
       throw new Error('Failed to generate content after retries');
     };
 
-    const insightsCompletion = await generateWithRetry({
+    let messages = [{ role: 'user', content: buildInsightsPrompt(context) }];
+    let insightsCompletion = await generateWithRetry({
       model: getModelName(),
-      messages: [{ role: 'user', content: buildInsightsPrompt(context) }],
+      messages: messages,
       temperature: 0,
-      max_tokens: 1000,
+      max_tokens: 2500,
       response_format: { type: 'json_object' }
     });
+
+    if (insightsCompletion.choices[0].finish_reason === 'length') {
+      console.warn("Response exceeded max_tokens, retrying for a more concise version...");
+      messages.push({ role: 'assistant', content: insightsCompletion.choices[0].message.content || '' });
+      messages.push({ role: 'user', content: 'Your previous response was too long and got cut off due to token limits. Please re-generate the JSON but make it much more concise to ensure it fits within the limit while answering the question.' });
+      
+      insightsCompletion = await generateWithRetry({
+        model: getModelName(),
+        messages: messages,
+        temperature: 0,
+        max_tokens: 2500,
+        response_format: { type: 'json_object' }
+      });
+    }
 
     const insightsText = insightsCompletion.choices[0].message.content || '{}'
     let insights = {}
