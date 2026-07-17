@@ -1,0 +1,9 @@
+Hospital Staff Directory & Roles
+================================
+1. Dr. John Jenkins (CARDIO) - Chief Cardiologist. Joining Date: 2018-03-12. Salary: $250,000/yr.
+2. Dr. Alice Smith (ORTHO) - Chief Orthopedic Surgeon. Joining Date: 2019-07-22. Salary: $230,000/yr.
+3. Nurse Emily Davis (PEDS) - Pediatric Head Nurse. Joining Date: 2020-11-05. Salary: $85,000/yr.
+4. Robert Brown (ADM) - Operations Administrator. Joining Date: 2021-04-14. Salary: $95,000/yr.
+5. Nurse Linda Moore (ER) - Senior Emergency Nurse. Joining Date: 2020-02-17. Salary: $88,000/yr.
+6. Dr. Mark Greene (ER) - Resident ER Physician. Joining Date: 2022-05-10. Salary: $165,000/yr.
+7. Nurse Sarah Connor (ICU) - ICU Charge Nurse. Joining Date: 2021-09-01. Salary: $92,000/yr.

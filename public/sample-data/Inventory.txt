@@ -1,0 +1,9 @@
+Hospital Equipment & Supply Inventory
+=====================================
+- MRI Scanner (Model Sigma-3): 1 unit active. Last service: 2026-03-10. Status: Operational. Location: Imaging Room A.
+- Defibrillators: 12 units. 10 deployed in ER/ICU, 2 in backup storage. Status: All Checked.
+- Oxygen Cylinders: 45 units in stock. Reorder point: 15 units. Status: OK. Supplier: Airgas Med.
+- Surgical Masks: 12,000 units in stock. Reorder point: 2,000 units. Status: OK.
+- Surgical Gloves (Size 7.5): 5,500 pairs. Reorder point: 1,000 pairs. Status: OK.
+- Sterile Dressings (Medium): 850 units. Reorder point: 200 units. Status: OK.
+- Patient Beds (Electric): 120 total. 112 occupied, 8 available. Status: Fully Functional.

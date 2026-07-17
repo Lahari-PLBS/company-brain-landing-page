@@ -215,13 +215,13 @@ Include relevant information such as (only if directly supported by the uploaded
 - Overall Revenue
 - Overall Expenses
 - Profit or Loss
-- Total Patients
-- Total Orders
+- Total Clients / Customers / Patients
+- Total Orders / Transactions
 - Inventory Status
 - Outstanding Payments
-- Doctor or Employee Performance
+- Staff or Employee Performance
 - Payroll Overview
-- Customer or Patient Feedback
+- Customer, Client, or Patient Feedback
 - Operational Highlights
 - Major Cost Drivers
 - Business Trends
@@ -268,7 +268,7 @@ risks:
 Potential blockers, operational concerns, dependencies, delays, financial risks, compliance risks, or other issues explicitly supported by the data.
 
 missing_documentation:
-Information that appears incomplete, unspecified, absent, or referenced but not available.
+Specific documents or figures that are explicitly mentioned in the text of the files as missing, incomplete, or unavailable. Do NOT list the active files themselves, do NOT list general context/purpose/scope gaps, and do NOT list absent categories. If no specific files are explicitly referenced as missing in the texts, return an empty array.
 
 duplicate_work:
 Repeated work, overlapping responsibilities, duplicate efforts, or redundant activities supported by the available information.

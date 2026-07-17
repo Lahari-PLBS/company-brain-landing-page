@@ -1,0 +1,15 @@
+Hospital Board Meeting Minutes - 2026-06-15
+===========================================
+Decisions Made:
+- Approved the purchase of 5 new patient monitors for the Pediatrics ICU.
+- Agreed to transition to the new EHR system by September 2026.
+- Authorized the hiring of 3 new pediatric nurses.
+
+Pending Tasks:
+- Robert Brown to verify implementation of backup power generator service contracts by July 31.
+- Dr. Jenkins to review cardiac department equipment requirements and report back by August 15.
+- Nurse Emily Davis to conduct EHR training schedule mapping for pediatric staff.
+
+Risks Identified:
+- Potential delay in EHR training could slow down check-ins during the transition.
+- Backup generator maintenance delay might impact critical power systems in emergency scenarios.

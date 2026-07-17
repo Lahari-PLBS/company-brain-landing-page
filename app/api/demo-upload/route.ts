@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
 import * as xlsx from 'xlsx'
-import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
-    const category = formData.get('category') as string || 'Policies'
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
@@ -51,35 +49,11 @@ export async function POST(req: NextRequest) {
 
     const cleanContent = content.trim()
 
-    // Save to database if authenticated
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (user && cleanContent) {
-      const { error: dbError } = await supabase.from('files').insert({
-        user_id: user.id,
-        file_name: fileName,
-        source_type: sourceType,
-        content: cleanContent,
-        category: category,
-      })
-
-      if (dbError) {
-        console.error('Failed to save file to DB:', {
-          message: dbError.message,
-          details: dbError.details,
-          hint: dbError.hint,
-          code: dbError.code
-        })
-        return NextResponse.json({ error: `Failed to save file to database: ${dbError.message}` }, { status: 500 })
-      }
-    }
-
     return NextResponse.json({
       fileName,
       content: cleanContent,
       sourceType,
-      project: 'Personal Workspace',
+      project: 'Demo Workspace',
       date: new Date().toISOString().split('T')[0]
     })
   } catch (error: any) {

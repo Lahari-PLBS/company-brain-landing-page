@@ -16,7 +16,7 @@ export default async function WorkspacePage() {
   // Fetch user's initial files
   const { data: initialFiles, error } = await supabase
     .from('files')
-    .select('id, file_name, source_type, created_at')
+    .select('id, file_name, source_type, content, category, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 

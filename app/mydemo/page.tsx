@@ -1,22 +1,21 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
 import { 
-  FileText, Trash2, Upload, RefreshCw, Send, CheckCircle2, 
-  AlertTriangle, FileQuestion, Copy, LogOut, ChevronDown, ChevronRight, 
-  MessageSquare, Plus, MoreVertical, Eye, Globe, Sparkles, HelpCircle, 
-  Layers, MessageCircle
+  Users, UserCheck, Package, DollarSign, Calendar, 
+  FileText, MessageSquare, Shield, ChevronDown, ChevronRight, 
+  Send, RefreshCw, AlertCircle, Sparkles, Upload, Eye, Trash2,
+  ArrowLeft, CheckCircle2, Globe, HelpCircle, Layers, MessageCircle
 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
-type FileItem = {
+type TempFile = {
   id: string
-  file_name: string
-  source_type: string
+  fileName: string
   content: string
+  sourceType: string
   category: string
-  created_at: string
+  rawFile: File
 }
 
 type Message = {
@@ -74,60 +73,48 @@ function renderSummary(summary: any) {
   return <p className="text-xs text-gray-700 leading-relaxed font-medium">{String(summary)}</p>;
 }
 
-export function WorkspaceClient({ 
-  user, 
-  initialFiles 
-}: { 
-  user: any, 
-  initialFiles: FileItem[] 
-}) {
-  const router = useRouter()
-  const supabase = createClient()
+export default function MyDemoPage() {
+  const [files, setFiles] = useState<TempFile[]>([])
+  const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set())
+  const [selectedCategory, setSelectedCategory] = useState<string>('All Documents')
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Finance']))
+  
+  // Cache for summaries & loading states
+  const [summaries, setSummaries] = useState<Record<string, InsightData>>({})
+  const [loadingSummaries, setLoadingSummaries] = useState<Record<string, boolean>>({})
+  
+  // Chat history per category
+  const [chats, setChats] = useState<Record<string, Message[]>>({})
+  
+  const [question, setQuestion] = useState('')
+  const [isAsking, setIsAsking] = useState(false)
+  const [uploadingCategory, setUploadingCategory] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   
   const fileInputsRef = useRef<Record<string, HTMLInputElement | null>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const [files, setFiles] = useState<FileItem[]>(initialFiles)
-  const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set())
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  
-  // Category layout states
-  const [selectedCategory, setSelectedCategory] = useState<string>('All Documents')
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Finance']))
-  const [previewFile, setPreviewFile] = useState<FileItem | null>(null)
-  const [uploadingCategory, setUploadingCategory] = useState<string | null>(null)
-
-  // Caching states
-  const [summaries, setSummaries] = useState<Record<string, InsightData>>({})
-  const [loadingSummaries, setLoadingSummaries] = useState<Record<string, boolean>>({})
-  
-  // Scoped chat message lists
-  const [chats, setChats] = useState<Record<string, Message[]>>({})
-  const [loadingHistory, setLoadingHistory] = useState<Record<string, boolean>>({})
-
-  const [question, setQuestion] = useState('')
-  const [isAsking, setIsAsking] = useState(false)
-
-  // Load chat history & summary on mount for default category
-  useEffect(() => {
-    fetchCategorySummary(selectedCategory)
-    loadCategoryHistory(selectedCategory)
-  }, [])
-
-  // Sync category changes
-  useEffect(() => {
-    if (!summaries[selectedCategory] && !loadingSummaries[selectedCategory]) {
-      fetchCategorySummary(selectedCategory)
-    }
-    if (!chats[selectedCategory] && !loadingHistory[selectedCategory]) {
-      loadCategoryHistory(selectedCategory)
-    }
-  }, [selectedCategory])
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chats, selectedCategory])
+
+  // Lazy load summaries on category selection or file changes
+  useEffect(() => {
+    const categoryFiles = selectedCategory === 'All Documents'
+      ? files
+      : files.filter(f => f.category === selectedCategory)
+
+    if (categoryFiles.length > 0 && !summaries[selectedCategory] && !loadingSummaries[selectedCategory]) {
+      fetchCategorySummary(selectedCategory)
+    } else if (categoryFiles.length === 0 && summaries[selectedCategory]) {
+      // Clear summary if no files exist in category
+      setSummaries(prev => {
+        const copy = { ...prev }
+        delete copy[selectedCategory]
+        return copy
+      })
+    }
+  }, [selectedCategory, files, summaries])
 
   const invalidateCache = (catName: string) => {
     setSummaries(prev => {
@@ -138,45 +125,44 @@ export function WorkspaceClient({
     })
   }
 
-  const loadCategoryHistory = async (categoryName: string) => {
-    setLoadingHistory(prev => ({ ...prev, [categoryName]: true }))
-    try {
-      const res = await fetch(`/api/history?category=${encodeURIComponent(categoryName)}`)
-      if (res.ok) {
-        const data = await res.json()
-        setChats(prev => ({ ...prev, [categoryName]: data.messages || [] }))
-      }
-    } catch (err) {
-      console.error('Failed to load category history', err)
-    } finally {
-      setLoadingHistory(prev => ({ ...prev, [categoryName]: false }))
-    }
-  }
-
-  const fetchCategorySummary = async (categoryName: string, force = false) => {
-    if (loadingSummaries[categoryName] && !force) return
+  async function fetchCategorySummary(categoryName: string) {
+    if (loadingSummaries[categoryName]) return
+    
     setLoadingSummaries(prev => ({ ...prev, [categoryName]: true }))
     setUploadError(null)
+
+    const categoryFiles = categoryName === 'All Documents'
+      ? files
+      : files.filter(f => f.category === categoryName)
+
+    const payloadFiles = categoryFiles.map(f => ({
+      fileName: f.fileName,
+      content: f.content,
+      sourceType: f.sourceType,
+      category: f.category,
+      project: 'Demo Upload'
+    }))
 
     try {
       const res = await fetch('/api/overview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          mode: 'workspace', 
-          category: categoryName 
-        })
+          mode: 'demo', 
+          category: categoryName,
+          files: payloadFiles 
+        }),
       })
 
-      if (!res.ok) throw new Error('Failed to load overview')
+      if (!res.ok) throw new Error('Failed to fetch summary')
       const data = await res.json()
       setSummaries(prev => ({ ...prev, [categoryName]: data.insights }))
-    } catch (err: any) {
-      console.error(err)
+    } catch (e: any) {
+      console.error(e)
       setSummaries(prev => ({
         ...prev,
         [categoryName]: {
-          summary: 'Unable to compile overview details at this time.',
+          summary: 'Unable to generate summary at this time.',
           decisions: [],
           pending_tasks: [],
           risks: [],
@@ -189,81 +175,89 @@ export function WorkspaceClient({
     }
   }
 
+  const toggleCategoryExpand = (catName: string, e: React.MouseEvent) => {
+    e.stopPropagation() // prevent category selection change if only expanding accordion
+    const newExpanded = new Set(expandedCategories)
+    if (newExpanded.has(catName)) {
+      newExpanded.delete(catName)
+    } else {
+      newExpanded.add(catName)
+    }
+    setExpandedCategories(newExpanded)
+  }
+
+  const toggleFileSelection = (fileId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const newSelected = new Set(selectedFileIds)
+    if (newSelected.has(fileId)) {
+      newSelected.delete(fileId)
+    } else {
+      newSelected.add(fileId)
+    }
+    setSelectedFileIds(newSelected)
+  }
+
+  const handleDeleteFile = (fileId: string, catName: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setFiles(prev => prev.filter(f => f.id !== fileId))
+    
+    const newSelected = new Set(selectedFileIds)
+    newSelected.delete(fileId)
+    setSelectedFileIds(newSelected)
+
+    invalidateCache(catName)
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, catName: string) => {
     const uploadedFiles = e.target.files
     if (!uploadedFiles || uploadedFiles.length === 0) return
 
-    setIsUploading(true)
     setUploadingCategory(catName)
     setUploadError(null)
-    
+
     for (let i = 0; i < uploadedFiles.length; i++) {
       const file = uploadedFiles[i]
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('category', catName)
-      
+
       try {
-        const res = await fetch('/api/upload', {
+        const res = await fetch('/api/demo-upload', {
           method: 'POST',
           body: formData
         })
-        
+
         if (res.ok) {
-          const { data } = await supabase
-            .from('files')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            
-          if (data) setFiles(data)
+          const data = await res.json()
+          setFiles(prev => [
+            ...prev,
+            {
+              id: Math.random().toString(36).substr(2, 9),
+              fileName: data.fileName,
+              content: data.content,
+              sourceType: data.sourceType,
+              category: catName,
+              rawFile: file
+            }
+          ])
           invalidateCache(catName)
         } else {
           const data = await res.json().catch(() => ({}))
-          setUploadError(data.error || `Failed to upload ${file.name}.`)
+          setUploadError(data.error || `Failed to upload ${file.name}`)
         }
-      } catch (error: any) {
-        setUploadError(`Failed to upload ${file.name}: ${error.message || error}`)
+      } catch (err: any) {
+        setUploadError(`Error uploading ${file.name}: ${err.message || err}`)
       }
     }
-    
-    setIsUploading(false)
+
     setUploadingCategory(null)
     if (fileInputsRef.current[catName]) {
       fileInputsRef.current[catName]!.value = ''
     }
   }
 
-  const handleDeleteFile = async (id: string, catName: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!confirm('Are you sure you want to permanently delete this file?')) return
-    setUploadError(null)
-
-    try {
-      const { error } = await supabase
-        .from('files')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id)
-
-      if (error) throw error
-
-      setFiles(prev => prev.filter(f => f.id !== id))
-      setSelectedFileIds(prev => {
-        const copy = new Set(prev)
-        copy.delete(id)
-        return copy
-      })
-
-      invalidateCache(catName)
-    } catch (err: any) {
-      setUploadError(`Failed to delete document: ${err.message || err}`)
-    }
-  }
-
   const handleAsk = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    
     const categoryFiles = selectedCategory === 'All Documents'
       ? files
       : files.filter(f => f.category === selectedCategory)
@@ -287,10 +281,17 @@ export function WorkspaceClient({
     setIsAsking(true)
     setUploadError(null)
 
-    // Build payload context
-    const activeScopedFileIds = selectedFileIds.size > 0
-      ? Array.from(selectedFileIds)
-      : categoryFiles.map(f => f.id)
+    // Scope query context to selected checkbox files or all category files
+    const activeScopedFiles = selectedFileIds.size > 0
+      ? files.filter(f => selectedFileIds.has(f.id))
+      : categoryFiles
+
+    const payloadFiles = activeScopedFiles.map(f => ({
+      fileName: f.fileName,
+      content: f.content,
+      sourceType: f.sourceType,
+      project: 'Demo Upload'
+    }))
 
     try {
       const res = await fetch('/api/ask', {
@@ -298,9 +299,8 @@ export function WorkspaceClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: currentQuestion,
-          mode: 'workspace',
-          category: selectedCategory,
-          fileIds: activeScopedFileIds
+          mode: 'demo',
+          files: payloadFiles
         })
       })
 
@@ -356,7 +356,7 @@ export function WorkspaceClient({
         }
       }
     } catch (err: any) {
-      setUploadError(err.message || 'Failed to complete message request')
+      setUploadError(err.message || 'Failed to complete query request')
       setChats(prev => {
         const currentCategoryChat = [...(prev[selectedCategory] || [])]
         if (currentCategoryChat.length > 0) {
@@ -369,57 +369,28 @@ export function WorkspaceClient({
     }
   }
 
-  const toggleCategoryExpand = (catName: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    const newExpanded = new Set(expandedCategories)
-    if (newExpanded.has(catName)) {
-      newExpanded.delete(catName)
-    } else {
-      newExpanded.add(catName)
-    }
-    setExpandedCategories(newExpanded)
-  }
-
-  const toggleFileSelection = (fileId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    const newSelected = new Set(selectedFileIds)
-    if (newSelected.has(fileId)) {
-      newSelected.delete(fileId)
-    } else {
-      newSelected.add(fileId)
-    }
-    setSelectedFileIds(newSelected)
-  }
-
-  // Group files by category
-  const filesByCategory: Record<string, FileItem[]> = {}
-  categories.forEach(cat => {
-    filesByCategory[cat.name] = []
-  })
-  files.forEach(file => {
-    const cat = file.category || 'Policies'
-    if (filesByCategory[cat]) {
-      filesByCategory[cat].push(file)
-    } else {
-      filesByCategory['Policies'].push(file)
-    }
-  })
-
   // Count files per category
   const fileCounts: Record<string, number> = {}
   categories.forEach(cat => {
-    fileCounts[cat.name] = filesByCategory[cat.name]?.length || 0
+    fileCounts[cat.name] = 0
+  })
+  files.forEach(file => {
+    if (fileCounts[file.category] !== undefined) {
+      fileCounts[file.category]++
+    }
   })
   fileCounts['All Documents'] = files.length
 
+  const filesByCategory = (catName: string) => files.filter(f => f.category === catName)
+  const isSelectedFiles = (catName: string) => filesByCategory(catName).some(f => selectedFileIds.has(f.id))
+  
   const currentCategoryFiles = selectedCategory === 'All Documents'
     ? files
-    : filesByCategory[selectedCategory] || []
+    : files.filter(f => f.category === selectedCategory)
 
   const activeSummary = summaries[selectedCategory]
   const isActiveSummaryLoading = loadingSummaries[selectedCategory]
   const activeChat = chats[selectedCategory] || []
-  const isChatLoading = loadingHistory[selectedCategory]
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans overflow-hidden h-screen">
@@ -427,49 +398,37 @@ export function WorkspaceClient({
       <header className="bg-white border-b border-gray-200 shrink-0 shadow-sm z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-brand-blue via-brand-purple to-brand-orange rounded-xl flex items-center justify-center shadow-md">
-              <Sparkles className="text-white w-4.5 h-4.5" />
-            </div>
+            <Link href="/dashboard" className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors">
+              <ArrowLeft className="w-4.5 h-4.5" />
+            </Link>
             <div>
               <h1 className="text-lg font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-brand-blue via-brand-purple to-brand-orange">
-                Alpha Assistant
+                Guest Upload Demo
               </h1>
-              <p className="text-[10px] text-gray-500 font-semibold tracking-wide">ORGANIZATIONAL WORKSPACE</p>
+              <p className="text-[10px] text-gray-500 font-semibold tracking-wide">🔒 SESSION-ONLY IN-MEMORY</p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-gray-600 font-semibold bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200">
-              {user.email}
-            </span>
-            <form action="/auth/signout" method="POST">
-              <button
-                type="submit"
-                className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-red-600 bg-white border border-gray-200 rounded-xl hover:bg-red-50 transition-colors shadow-sm"
-              >
-                <LogOut className="w-4 h-4" />
-                Log Out
-              </button>
-            </form>
-          </div>
+          <span className="text-[10px] font-bold bg-orange-100 text-orange-800 px-3 py-1 rounded-full border border-orange-200">
+            Guest Sandbox
+          </span>
         </div>
       </header>
 
       {/* Main layout */}
       <main className="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto p-4 md:p-6 gap-6">
         
-        {/* Pane 1 (Left): Collapsible categories listing */}
+        {/* Pane 1 (Left): Collapsible sidebar categories with upload picker */}
         <section className="w-1/4 min-w-[200px] max-w-[280px] bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
           <div className="p-4 border-b border-gray-200 bg-gray-50/50 shrink-0">
             <h2 className="font-bold text-gray-800 text-sm flex items-center gap-2">
-              <Layers className="w-4 h-4 text-brand-blue" />
-              Categories
+              <Upload className="w-4 h-4 text-brand-purple" />
+              Upload Hub
             </h2>
           </div>
           
           <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-white">
             
-            {/* All Documents selector */}
+            {/* All Documents item */}
             <button
               onClick={() => setSelectedCategory('All Documents')}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-left transition-all font-semibold text-xs border ${
@@ -494,7 +453,7 @@ export function WorkspaceClient({
             {categories.map(cat => {
               const isSelected = selectedCategory === cat.name
               const isExpanded = expandedCategories.has(cat.name)
-              const catFiles = filesByCategory[cat.name] || []
+              const catFiles = filesByCategory(cat.name)
               const count = catFiles.length
               const isUploadingCat = uploadingCategory === cat.name
 
@@ -523,9 +482,9 @@ export function WorkspaceClient({
                     </div>
                   </div>
 
-                  {/* Accordion File list */}
+                  {/* Expanded document actions list */}
                   {isExpanded && (
-                    <div className="p-2 bg-white space-y-2 border-t border-gray-50">
+                    <div className="p-2 bg-white space-y-2">
                       {catFiles.length > 0 && (
                         <div className="space-y-1">
                           {catFiles.map(file => {
@@ -549,10 +508,10 @@ export function WorkspaceClient({
                                   />
                                   <div className="min-w-0 flex-1">
                                     <p className="text-[10px] font-bold text-gray-800 break-all leading-tight">
-                                      {file.file_name}
+                                      {file.fileName}
                                     </p>
-                                    <p className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mt-0.5 font-sans">
-                                      {file.source_type}
+                                    <p className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mt-0.5">
+                                      {file.sourceType}
                                     </p>
                                   </div>
                                 </div>
@@ -561,17 +520,18 @@ export function WorkspaceClient({
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      setPreviewFile(file)
+                                      const fileURL = URL.createObjectURL(file.rawFile)
+                                      window.open(fileURL, '_blank')
                                     }}
                                     className="p-1 text-gray-400 hover:text-brand-blue rounded-md hover:bg-gray-100"
-                                    title="View Content"
+                                    title="View Original"
                                   >
                                     <Eye className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     onClick={(e) => handleDeleteFile(file.id, cat.name, e)}
                                     className="p-1 text-gray-400 hover:text-red-500 rounded-md hover:bg-gray-100"
-                                    title="Delete File"
+                                    title="Delete"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -582,7 +542,7 @@ export function WorkspaceClient({
                         </div>
                       )}
 
-                      {/* File upload trigger */}
+                      {/* File upload clicker */}
                       <div>
                         <input 
                           type="file"
@@ -593,17 +553,17 @@ export function WorkspaceClient({
                         />
                         <button
                           onClick={() => fileInputsRef.current[cat.name]?.click()}
-                          disabled={isUploading}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-2 text-[10px] text-gray-500 hover:text-brand-blue hover:border-brand-blue transition-all bg-gray-50/50 font-bold disabled:opacity-50"
+                          disabled={uploadingCategory !== null}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-2 text-[10px] text-gray-500 hover:text-brand-purple hover:border-brand-purple transition-all bg-gray-50/50 font-bold disabled:opacity-50"
                         >
                           {isUploadingCat ? (
                             <>
-                              <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand-blue" />
-                              Uploading...
+                              <RefreshCw className="w-3 h-3 animate-spin text-brand-purple" />
+                              Parsing...
                             </>
                           ) : (
                             <>
-                              <Upload className="w-3.5 h-3.5" />
+                              <Upload className="w-3 h-3" />
                               Upload
                             </>
                           )}
@@ -626,7 +586,7 @@ export function WorkspaceClient({
             </h2>
             {currentCategoryFiles.length > 0 && (
               <button 
-                onClick={() => fetchCategorySummary(selectedCategory, true)}
+                onClick={() => fetchCategorySummary(selectedCategory)}
                 disabled={isActiveSummaryLoading}
                 className="p-1.5 text-gray-500 hover:text-brand-purple rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
                 title="Regenerate Summary"
@@ -646,12 +606,12 @@ export function WorkspaceClient({
 
             {currentCategoryFiles.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 py-20 max-w-xs mx-auto">
-                <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center mb-3">
-                  <Upload className="w-5 h-5 text-brand-blue" />
+                <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-3">
+                  <Upload className="w-5 h-5 text-brand-purple" />
                 </div>
-                <h3 className="font-bold text-sm text-gray-700 mb-1">No documents in {selectedCategory}</h3>
+                <h3 className="font-bold text-sm text-gray-700 mb-1">No files in {selectedCategory}</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Upload a document under `{selectedCategory}` on the left to permanently save it and generate summaries.
+                  Upload a document under `{selectedCategory}` on the left to automatically compile overview summaries and highlights.
                 </p>
               </div>
             ) : isActiveSummaryLoading ? (
@@ -668,8 +628,8 @@ export function WorkspaceClient({
               <div className="space-y-4">
                 {/* Executive Summary */}
                 {activeSummary.summary && (
-                  <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/30 p-4 border border-blue-100/50 rounded-2xl shadow-sm">
-                    <h3 className="font-bold text-xs text-brand-blue uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <div className="bg-gradient-to-br from-purple-50/50 to-indigo-50/30 p-4 border border-indigo-100/50 rounded-2xl shadow-sm">
+                    <h3 className="font-bold text-xs text-brand-purple uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" />
                       Executive Summary
                     </h3>
@@ -774,7 +734,7 @@ export function WorkspaceClient({
             </span>
           </div>
 
-          {/* Messages list */}
+          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
             {currentCategoryFiles.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 max-w-xs mx-auto">
@@ -783,13 +743,8 @@ export function WorkspaceClient({
                 </div>
                 <h3 className="font-bold text-sm text-gray-700 mb-1">No documents in {selectedCategory}</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Upload files under `{selectedCategory}` on the left to start chatting about them persistently.
+                  You must upload at least one document under the `{selectedCategory}` category on the left to start chatting with the AI.
                 </p>
-              </div>
-            ) : isChatLoading ? (
-              <div className="h-full flex flex-col items-center justify-center py-20 text-gray-400">
-                <RefreshCw className="w-6 h-6 mb-3 text-brand-orange animate-spin" />
-                <p className="text-xs font-semibold text-gray-500">Loading conversation history...</p>
               </div>
             ) : activeChat.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 max-w-xs mx-auto">
@@ -798,7 +753,7 @@ export function WorkspaceClient({
                 </div>
                 <h3 className="font-bold text-sm text-gray-700 mb-1">Chat Scoped to {selectedCategory}</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Ask a question to start a persistent conversation across the {currentCategoryFiles.length} file(s) in `{selectedCategory}`.
+                  Ask a question to search across the {currentCategoryFiles.length} file(s) uploaded under `{selectedCategory}`.
                 </p>
               </div>
             ) : (
@@ -832,7 +787,7 @@ export function WorkspaceClient({
             {isAsking && (
               <div className="flex items-start">
                 <div className="bg-gray-100 text-gray-800 rounded-2xl rounded-bl-none px-4 py-2.5 border border-gray-100 shadow-sm flex items-center gap-2 text-xs font-semibold text-gray-500">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand-orange" />
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand-purple" />
                   AlphaAssistant is thinking...
                 </div>
               </div>
@@ -863,29 +818,6 @@ export function WorkspaceClient({
         </section>
 
       </main>
-
-      {/* Preview File Modal */}
-      {previewFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] flex flex-col shadow-2xl overflow-hidden border border-gray-100">
-            <div className="p-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-              <div>
-                <h3 className="font-bold text-gray-950 text-base">{previewFile.file_name}</h3>
-                <p className="text-xs text-gray-500 mt-0.5 font-medium uppercase tracking-wider">{previewFile.source_type} • {previewFile.category || 'Policies'}</p>
-              </div>
-              <button 
-                onClick={() => setPreviewFile(null)} 
-                className="text-gray-400 hover:text-gray-600 font-bold bg-white border border-gray-200 rounded-lg px-3 py-1.5 transition-colors hover:shadow-sm text-sm"
-              >
-                Close
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto flex-1 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans font-medium">
-              {previewFile.content || "No content extracted."}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

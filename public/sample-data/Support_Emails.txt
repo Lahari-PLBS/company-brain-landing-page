@@ -1,0 +1,19 @@
+Customer Support & Patient Inquiry Emails
+=========================================
+Email #1:
+From: Mark Wilson (mwilson@email.com)
+Date: 2026-07-12 09:14
+Subject: Billing query for Patient ID #1092
+Message: I received an invoice for my knee brace fitting. Can you please verify if this was covered by my insurance provider? The policy ID is G-82931.
+
+Email #2:
+From: Sarah Connor (sconnor@email.com)
+Date: 2026-07-13 14:22
+Subject: Scheduling appointment with Dr. Jenkins
+Message: I would like to schedule a follow-up consultation with the Cardiology department next Tuesday. Is there any open slot in the afternoon?
+
+Email #3:
+From: David Miller (dmiller@email.com)
+Date: 2026-07-14 11:05
+Subject: Request for medical records copy
+Message: Can I get a digital copy of my x-ray reports from my ORTHO visit on May 14th? I need to share it with my primary care doctor.

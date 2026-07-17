@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const question = body.question
     const fileIds = body.fileIds // Array of string UUIDs
     const conversationId = body.conversationId // Optional: existing conversation
+    const category = body.category || 'All Documents'
 
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 })
@@ -84,13 +85,28 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          // 1. Fetch previous messages if conversationId is provided
+          // Resolve category-scoped conversation_id if conversationId is not provided
+          let activeConvId = conversationId
+          if (user && category && !activeConvId && body.mode !== 'demo') {
+            const { data: existingQuery } = await staticSupabase
+              .from('queries')
+              .select('conversation_id')
+              .eq('user_id', user.id)
+              .eq('category', category)
+              .limit(1)
+            
+            if (existingQuery && existingQuery.length > 0) {
+              activeConvId = existingQuery[0].conversation_id
+            }
+          }
+
+          // 1. Fetch previous messages if activeConvId is resolved
           let previousMessages: any[] = []
-          if (user && conversationId && body.mode !== 'demo') {
+          if (user && activeConvId && body.mode !== 'demo') {
             const { data: pastQueries } = await staticSupabase
               .from('queries')
               .select('question, answer')
-              .eq('conversation_id', conversationId)
+              .eq('conversation_id', activeConvId)
               .order('created_at', { ascending: true })
 
             if (pastQueries) {
@@ -138,10 +154,11 @@ export async function POST(req: NextRequest) {
                 question: question,
                 answer: answer,
                 sources: formattedSources,
-                insights: insights
+                insights: insights,
+                category: category
               }
-              if (conversationId) {
-                insertPayload.conversation_id = conversationId
+              if (activeConvId) {
+                insertPayload.conversation_id = activeConvId
               }
 
               const { data: insertData, error: insertError } = await staticSupabase.from('queries').insert(insertPayload).select()

@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -10,12 +10,33 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Group queries by conversation_id to get unique conversations.
-    // We select the first question (by created_at) as the title,
-    // and the latest created_at as the updated time.
-    // In PostgreSQL (Supabase), we can use a window function or distinct on.
-    // But for simplicity with the Supabase client, we'll fetch all queries for the user,
-    // sorted by created_at, and process them in memory.
+    const { searchParams } = new URL(req.url)
+    const category = searchParams.get('category')
+
+    if (category) {
+      // Fetch category-scoped persistent query history
+      const { data: queries, error } = await supabase
+        .from('queries')
+        .select('question, answer, sources')
+        .eq('user_id', user.id)
+        .eq('category', category)
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching category history:', error)
+        return NextResponse.json({ error: 'Failed to fetch category history' }, { status: 500 })
+      }
+
+      const messages: any[] = []
+      queries?.forEach((q) => {
+        messages.push({ role: 'user', content: q.question })
+        messages.push({ role: 'ai', content: q.answer, sources: q.sources || [] })
+      })
+
+      return NextResponse.json({ messages })
+    }
+
+    // Group queries by conversation_id to get unique conversations (fallback/legacy)
     const { data: queries, error } = await supabase
       .from('queries')
       .select('conversation_id, question, created_at')
@@ -27,20 +48,17 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 })
     }
 
-    // Grouping by conversation_id
     const conversationMap = new Map<string, any>()
     
-    queries.forEach((q) => {
+    queries?.forEach((q) => {
       if (!conversationMap.has(q.conversation_id)) {
         conversationMap.set(q.conversation_id, {
           id: q.conversation_id,
-          title: q.question, // The first one we see is the newest, but we'll use it as title for now. Actually, oldest is better for title.
+          title: q.question,
           updatedAt: q.created_at,
-          createdAt: q.created_at // Will update this
+          createdAt: q.created_at
         })
       } else {
-        // Since we iterate from newest to oldest, the later ones we see are older.
-        // Update the title to the oldest question, and createdAt to the oldest.
         const conv = conversationMap.get(q.conversation_id)
         conv.title = q.question
         conv.createdAt = q.created_at
