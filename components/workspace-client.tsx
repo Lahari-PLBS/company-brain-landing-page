@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ChartRenderer, VisualizationData } from './chart-renderer'
 import { 
   FileText, Trash2, Upload, RefreshCw, Send, CheckCircle2, 
-  AlertTriangle, FileQuestion, Copy, LogOut, ChevronDown, ChevronRight, 
+  AlertTriangle, AlertCircle, FileQuestion, Copy, LogOut, ChevronDown, ChevronRight, 
   MessageSquare, Plus, MoreVertical, Eye, Globe, Sparkles, HelpCircle, 
   Layers, MessageCircle, Maximize2, X
 } from 'lucide-react'

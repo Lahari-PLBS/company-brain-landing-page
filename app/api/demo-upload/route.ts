@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
 import * as xlsx from 'xlsx'
 import { parseEml } from '@/lib/eml-parser'
+import { parsePdf } from '@/lib/pdf-wrapper'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,9 +23,7 @@ export async function POST(req: NextRequest) {
     let sourceType = 'document'
 
     if (extension === 'pdf') {
-      const parser = new PDFParse({ data: buffer })
-      const data = await parser.getText()
-      content = data.text
+      content = await parsePdf(buffer)
       sourceType = 'pdf'
     } else if (extension === 'docx') {
       const result = await mammoth.extractRawText({ buffer })
