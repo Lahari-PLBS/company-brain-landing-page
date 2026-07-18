@@ -2,6 +2,14 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
+  if (process.env.TEST_ENV === 'true') {
+    return {
+      auth: {
+        getUser: async () => ({ data: { user: null } })
+      }
+    } as any
+  }
+
   const cookieStore = await cookies()
 
   return createServerClient(

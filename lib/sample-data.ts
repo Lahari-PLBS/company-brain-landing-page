@@ -3,6 +3,7 @@ import path from 'path'
 import { DemoFile } from './types'
 import mammoth from 'mammoth'
 import * as xlsx from 'xlsx'
+import { parseEml } from './eml-parser'
 
 let cachedDemoFiles: DemoFile[] | null = null
 
@@ -42,6 +43,26 @@ export async function loadDemoFiles(): Promise<DemoFile[]> {
       } else if (extension === 'txt') {
         content = buffer.toString('utf-8')
         sourceType = 'txt'
+      } else if (extension === 'eml') {
+        const emlContent = buffer.toString('utf-8')
+        const parsedEmail = parseEml(emlContent)
+        content = [
+          `Subject:`,
+          `${parsedEmail.subject}`,
+          ``,
+          `From:`,
+          `${parsedEmail.from}`,
+          ``,
+          `To:`,
+          `${parsedEmail.to}`,
+          ``,
+          `Date:`,
+          `${parsedEmail.date}`,
+          ``,
+          `Body:`,
+          `${parsedEmail.body}`
+        ].join('\n')
+        sourceType = 'email'
       } else {
         content = buffer.toString('utf-8')
       }

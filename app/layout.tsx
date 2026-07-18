@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light',
-  themeColor: '#1a0b54',
+  colorScheme: 'dark',
+  themeColor: '#0B1220',
 }
 
 export default function RootLayout({
@@ -22,9 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="antialiased bg-white text-brand-primary min-h-screen flex flex-col">
+      <body className="antialiased bg-[#0B1220] text-gray-100 min-h-screen flex flex-col relative overflow-x-hidden selection:bg-purple-600/30 selection:text-white">
+        {/* Animated Background Glowing Blobs — fixed so they never inflate page height */}
+        <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none animate-pulse duration-[8000ms] z-0" />
+        <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none animate-pulse duration-[10000ms] z-0" />
+        <div className="fixed top-[30%] right-[20%] w-[35vw] h-[35vw] rounded-full bg-cyan-600/5 blur-[100px] pointer-events-none animate-pulse duration-[6000ms] z-0" />
+
         <Header />
-        <div className="flex-1">
+        <div className="flex-1 relative z-10">
           {children}
         </div>
         <Footer />

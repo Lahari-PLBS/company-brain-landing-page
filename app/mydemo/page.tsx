@@ -6,8 +6,9 @@ import {
   Users, UserCheck, Package, DollarSign, Calendar, 
   FileText, MessageSquare, Shield, ChevronDown, ChevronRight, 
   Send, RefreshCw, AlertCircle, Sparkles, Upload, Eye, Trash2,
-  ArrowLeft, CheckCircle2, Globe, HelpCircle, Layers, MessageCircle
+  ArrowLeft, CheckCircle2, Globe, HelpCircle, Layers, MessageCircle, Maximize2, X
 } from 'lucide-react'
+import { ChartRenderer, VisualizationData } from '@/components/chart-renderer'
 
 type TempFile = {
   id: string
@@ -19,9 +20,11 @@ type TempFile = {
 }
 
 type Message = {
+  id?: string
   role: 'user' | 'ai'
   content: string
   sources?: any[]
+  visualization?: any
 }
 
 type InsightData = {
@@ -63,15 +66,22 @@ function renderSummary(summary: any) {
     return (
       <div className="space-y-1.5 mt-1">
         {Object.entries(summary).map(([key, val]) => (
-          <div key={key} className="text-xs text-gray-700 leading-relaxed font-medium">
-            <strong className="capitalize font-bold text-gray-900">{key.replace(/_/g, ' ')}:</strong> {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+          <div key={key} className="text-xs text-gray-300 leading-relaxed font-medium">
+            <strong className="capitalize font-bold text-white">{key.replace(/_/g, ' ')}:</strong> {typeof val === 'object' ? JSON.stringify(val) : String(val)}
           </div>
         ))}
       </div>
     );
   }
-  return <p className="text-xs text-gray-700 leading-relaxed font-medium">{String(summary)}</p>;
+  return <p className="text-xs text-gray-300 leading-relaxed font-medium">{String(summary)}</p>;
 }
+
+const getFileEmoji = (fileName: string, sourceType: string) => {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  if (sourceType === 'email' || ext === 'eml') return '📧';
+  if (sourceType === 'spreadsheet' || sourceType === 'csv' || ext === 'xlsx' || ext === 'xls' || ext === 'csv') return '📊';
+  return '📄';
+};
 
 export default function MyDemoPage() {
   const [files, setFiles] = useState<TempFile[]>([])
@@ -84,10 +94,45 @@ export default function MyDemoPage() {
   const [loadingSummaries, setLoadingSummaries] = useState<Record<string, boolean>>({})
   
   // Chat history per category
-  const [chats, setChats] = useState<Record<string, Message[]>>({})
+  const [chats, setChats] = useState<Record<string, Message[]>>({
+    'All Documents': [
+      {
+        id: 'mock-query-1',
+        role: 'user',
+        content: 'Show me the department billing distribution.'
+      },
+      {
+        id: 'mock-query-1',
+        role: 'ai',
+        content: 'Here is the billing breakdown by department for the current quarter, showing the financial layout across different teams.',
+        visualization: {
+          type: 'bar',
+          title: 'Department Q2 Billing Distribution',
+          xKey: 'department',
+          yKey: 'billing',
+          data: [
+            { department: 'Engineering',    billing: 45000 },
+            { department: 'Marketing',      billing: 28000 },
+            { department: 'Sales',          billing: 62000 },
+            { department: 'Operations',     billing: 15000 },
+            { department: 'Human Resources',billing: 8000  },
+            { department: 'Finance',        billing: 31000 },
+            { department: 'Legal',          billing: 12000 },
+            { department: 'Product',        billing: 54000 },
+            { department: 'Design',         billing: 22000 },
+            { department: 'Customer Ops',   billing: 18000 },
+            { department: 'Infrastructure', billing: 39000 },
+            { department: 'Data Science',   billing: 47000 },
+          ]
+        }
+      }
+    ]
+  })
   
   const [question, setQuestion] = useState('')
   const [isAsking, setIsAsking] = useState(false)
+  const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null)
+  const [expandedVisualization, setExpandedVisualization] = useState<VisualizationData | null>(null)
   const [uploadingCategory, setUploadingCategory] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   
@@ -97,6 +142,18 @@ export default function MyDemoPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chats, selectedCategory])
+
+  // Listen for Escape key to close modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setExpandedVisualization(null)
+        setDeleteCandidateId(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // Lazy load summaries on category selection or file changes
   useEffect(() => {
@@ -255,6 +312,21 @@ export default function MyDemoPage() {
     }
   }
 
+  const handleDeleteQuery = (queryId: string) => {
+    setDeleteCandidateId(queryId)
+  }
+
+  const confirmDeleteQuery = () => {
+    if (!deleteCandidateId) return
+    const queryId = deleteCandidateId
+    setDeleteCandidateId(null)
+    setChats(prev => {
+      const currentCategoryChat = prev[selectedCategory] || []
+      const filtered = currentCategoryChat.filter(msg => msg.id !== queryId)
+      return { ...prev, [selectedCategory]: filtered }
+    })
+  }
+
   const handleAsk = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -267,14 +339,15 @@ export default function MyDemoPage() {
     const currentQuestion = question
     setQuestion('')
     
+    const queryId = Math.random().toString(36).substring(2, 9)
     setChats(prev => {
       const currentCategoryChat = prev[selectedCategory] || []
       return {
         ...prev,
         [selectedCategory]: [
           ...currentCategoryChat,
-          { role: 'user', content: currentQuestion },
-          { role: 'ai', content: '', sources: [] }
+          { id: queryId, role: 'user', content: currentQuestion },
+          { id: queryId, role: 'ai', content: '', sources: [] }
         ]
       }
     })
@@ -343,6 +416,8 @@ export default function MyDemoPage() {
                     lastMsg.content += parsed.data
                   } else if (parsed.type === 'sources') {
                     lastMsg.sources = parsed.data
+                  } else if (parsed.type === 'visualization') {
+                    lastMsg.visualization = parsed.data
                   }
                   
                   currentCategoryChat[currentCategoryChat.length - 1] = lastMsg
@@ -393,22 +468,22 @@ export default function MyDemoPage() {
   const activeChat = chats[selectedCategory] || []
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans overflow-hidden h-screen">
+    <div className="min-h-screen bg-[#0B1220] flex flex-col font-sans overflow-hidden h-screen relative z-10">
       {/* Top Header */}
-      <header className="bg-white border-b border-gray-200 shrink-0 shadow-sm z-10">
+      <header className="bg-[#0B1220]/80 backdrop-blur-md border-b border-white/5 shrink-0 z-10 shadow-lg shadow-black/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors">
+            <Link href="/dashboard" className="p-1.5 hover:bg-white/5 text-gray-400 hover:text-white rounded-lg transition-colors">
               <ArrowLeft className="w-4.5 h-4.5" />
             </Link>
             <div>
-              <h1 className="text-lg font-bold text-gray-900 bg-clip-text text-transparent bg-gradient-to-r from-brand-blue via-brand-purple to-brand-orange">
+              <h1 className="text-lg font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-brand-blue via-brand-purple to-brand-orange">
                 Guest Upload Demo
               </h1>
-              <p className="text-[10px] text-gray-500 font-semibold tracking-wide">🔒 SESSION-ONLY IN-MEMORY</p>
+              <p className="text-[10px] text-gray-400 font-semibold tracking-wide">🔒 SESSION-ONLY IN-MEMORY</p>
             </div>
           </div>
-          <span className="text-[10px] font-bold bg-orange-100 text-orange-800 px-3 py-1 rounded-full border border-orange-200">
+          <span className="text-[10px] font-bold bg-orange-950/20 text-orange-400 px-3 py-1 rounded-full border border-orange-900/40">
             Guest Sandbox
           </span>
         </div>
@@ -418,23 +493,23 @@ export default function MyDemoPage() {
       <main className="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto p-4 md:p-6 gap-6">
         
         {/* Pane 1 (Left): Collapsible sidebar categories with upload picker */}
-        <section className="w-1/4 min-w-[200px] max-w-[280px] bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-gray-200 bg-gray-50/50 shrink-0">
-            <h2 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+        <section className="w-1/4 min-w-[200px] max-w-[280px] bg-[#1A2235]/40 backdrop-blur-md border border-white/5 rounded-2xl flex flex-col overflow-hidden shadow-2xl shadow-blue-500/5">
+          <div className="p-4 border-b border-white/5 bg-[#111827]/40 shrink-0">
+            <h2 className="font-extrabold text-white text-sm flex items-center gap-2 tracking-tight">
               <Upload className="w-4 h-4 text-brand-purple" />
               Upload Hub
             </h2>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-white">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-transparent">
             
             {/* All Documents item */}
             <button
               onClick={() => setSelectedCategory('All Documents')}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-left transition-all font-semibold text-xs border ${
                 selectedCategory === 'All Documents'
-                  ? 'bg-blue-50/70 border-blue-100 text-brand-blue shadow-sm'
-                  : 'border-transparent text-gray-700 hover:bg-gray-50'
+                  ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-lg shadow-blue-500/5'
+                  : 'border-transparent text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -442,13 +517,13 @@ export default function MyDemoPage() {
                 <span>All Documents</span>
               </div>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                selectedCategory === 'All Documents' ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-500'
+                selectedCategory === 'All Documents' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-white/5 text-gray-400'
               }`}>
                 {files.length}
               </span>
             </button>
 
-            <div className="h-px bg-gray-100 my-2"></div>
+            <div className="h-px bg-white/5 my-2"></div>
 
             {categories.map(cat => {
               const isSelected = selectedCategory === cat.name
@@ -458,14 +533,14 @@ export default function MyDemoPage() {
               const isUploadingCat = uploadingCategory === cat.name
 
               return (
-                <div key={cat.name} className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                <div key={cat.name} className="border border-white/5 rounded-xl overflow-hidden shadow-md bg-[#111827]/40">
                   {/* Category Header Selector */}
                   <div
                     onClick={() => setSelectedCategory(cat.name)}
                     className={`flex items-center justify-between p-3 cursor-pointer select-none text-xs font-semibold transition-colors border-b border-transparent ${
                       isSelected 
-                        ? 'bg-blue-50/40 text-brand-blue border-blue-50' 
-                        : 'text-gray-700 hover:bg-gray-50/50'
+                        ? 'bg-blue-500/10 text-blue-400 border-white/5' 
+                        : 'text-gray-300 hover:bg-white/5 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -474,7 +549,7 @@ export default function MyDemoPage() {
                     </div>
                     <div className="flex items-center gap-1.5" onClick={(e) => toggleCategoryExpand(cat.name, e)}>
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        isSelected ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600'
+                        isSelected ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-white/5 text-gray-400'
                       }`}>
                         {count}
                       </span>
@@ -484,7 +559,7 @@ export default function MyDemoPage() {
 
                   {/* Expanded document actions list */}
                   {isExpanded && (
-                    <div className="p-2 bg-white space-y-2">
+                    <div className="p-2 bg-[#1A2235]/25 space-y-2 border-t border-white/5">
                       {catFiles.length > 0 && (
                         <div className="space-y-1">
                           {catFiles.map(file => {
@@ -495,8 +570,8 @@ export default function MyDemoPage() {
                                 onClick={(e) => toggleFileSelection(file.id, e)}
                                 className={`flex items-center justify-between p-2 rounded-lg cursor-pointer border transition-all text-left ${
                                   isChecked 
-                                    ? 'border-brand-blue bg-blue-50/30' 
-                                    : 'border-transparent hover:bg-gray-50'
+                                    ? 'border-blue-500/40 bg-blue-500/10' 
+                                    : 'border-transparent hover:bg-white/5'
                                 }`}
                               >
                                 <div className="flex items-start gap-2 min-w-0 flex-1">
@@ -504,13 +579,13 @@ export default function MyDemoPage() {
                                     type="checkbox"
                                     checked={isChecked}
                                     onChange={() => {}}
-                                    className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue cursor-pointer"
+                                    className="mt-0.5 h-3.5 w-3.5 rounded border-white/10 bg-white/5 text-blue-500 focus:ring-blue-500/50 cursor-pointer"
                                   />
                                   <div className="min-w-0 flex-1">
-                                    <p className="text-[10px] font-bold text-gray-800 break-all leading-tight">
-                                      {file.fileName}
+                                    <p className="text-[10px] font-bold text-gray-200 break-all leading-tight">
+                                      {getFileEmoji(file.fileName, file.sourceType)} {file.fileName}
                                     </p>
-                                    <p className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mt-0.5">
+                                    <p className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mt-0.5">
                                       {file.sourceType}
                                     </p>
                                   </div>
@@ -523,14 +598,14 @@ export default function MyDemoPage() {
                                       const fileURL = URL.createObjectURL(file.rawFile)
                                       window.open(fileURL, '_blank')
                                     }}
-                                    className="p-1 text-gray-400 hover:text-brand-blue rounded-md hover:bg-gray-100"
+                                    className="p-1 text-gray-500 hover:text-blue-400 rounded-md hover:bg-white/5"
                                     title="View Original"
                                   >
                                     <Eye className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     onClick={(e) => handleDeleteFile(file.id, cat.name, e)}
-                                    className="p-1 text-gray-400 hover:text-red-500 rounded-md hover:bg-gray-100"
+                                    className="p-1 text-gray-500 hover:text-red-400 rounded-md hover:bg-white/5"
                                     title="Delete"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -549,16 +624,16 @@ export default function MyDemoPage() {
                           ref={el => { fileInputsRef.current[cat.name] = el }}
                           onChange={(e) => handleFileUpload(e, cat.name)}
                           className="hidden"
-                          accept=".txt,.pdf,.docx,.csv,.xlsx,.xls"
+                          accept=".txt,.pdf,.docx,.csv,.xlsx,.xls,.eml"
                         />
                         <button
                           onClick={() => fileInputsRef.current[cat.name]?.click()}
                           disabled={uploadingCategory !== null}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-2 text-[10px] text-gray-500 hover:text-brand-purple hover:border-brand-purple transition-all bg-gray-50/50 font-bold disabled:opacity-50"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 py-2 text-[10px] text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all bg-white/5 hover:bg-white/10 font-bold disabled:opacity-50"
                         >
                           {isUploadingCat ? (
                             <>
-                              <RefreshCw className="w-3 h-3 animate-spin text-brand-purple" />
+                              <RefreshCw className="w-3 h-3 animate-spin text-blue-400" />
                               Parsing...
                             </>
                           ) : (
@@ -575,12 +650,24 @@ export default function MyDemoPage() {
               )
             })}
           </div>
+
+          <div className="p-3 bg-[#111827]/40 border-t border-white/5 text-[9px] text-gray-400 font-bold shrink-0">
+            <p className="uppercase tracking-wider text-gray-500 mb-1">Supported Files</p>
+            <div className="flex flex-wrap gap-1.5 font-sans">
+              <span className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded">PDF</span>
+              <span className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded">DOCX</span>
+              <span className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded">TXT</span>
+              <span className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded">CSV</span>
+              <span className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded">XLSX</span>
+              <span className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded">EML</span>
+            </div>
+          </div>
         </section>
 
         {/* Pane 2 (Middle): Summary Panel */}
-        <section className="w-[38%] bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-gray-200 bg-gray-50/50 shrink-0 flex items-center justify-between">
-            <h2 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+        <section className="w-[38%] bg-[#1A2235]/40 backdrop-blur-md border border-white/5 rounded-2xl flex flex-col overflow-hidden shadow-2xl shadow-blue-500/5">
+          <div className="p-4 border-b border-white/5 bg-[#111827]/40 shrink-0 flex items-center justify-between">
+            <h2 className="font-extrabold text-white text-sm flex items-center gap-2 tracking-tight">
               <FileText className="w-4 h-4 text-brand-purple" />
               {selectedCategory} Summary
             </h2>
@@ -588,7 +675,7 @@ export default function MyDemoPage() {
               <button 
                 onClick={() => fetchCategorySummary(selectedCategory)}
                 disabled={isActiveSummaryLoading}
-                className="p-1.5 text-gray-500 hover:text-brand-purple rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors disabled:opacity-50"
                 title="Regenerate Summary"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isActiveSummaryLoading ? 'animate-spin' : ''}`} />
@@ -596,40 +683,40 @@ export default function MyDemoPage() {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-white">
+          <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-transparent">
             {uploadError && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+              <div className="p-3 bg-red-950/40 border border-red-900/40 text-red-400 rounded-xl text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
                 <span className="font-semibold">{uploadError}</span>
               </div>
             )}
 
             {currentCategoryFiles.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 py-20 max-w-xs mx-auto">
-                <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-3">
-                  <Upload className="w-5 h-5 text-brand-purple" />
+                <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3">
+                  <Upload className="w-5 h-5 text-blue-400" />
                 </div>
-                <h3 className="font-bold text-sm text-gray-700 mb-1">No files in {selectedCategory}</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <h3 className="font-extrabold text-sm text-white mb-1 tracking-tight">No files in {selectedCategory}</h3>
+                <p className="text-xs text-gray-400 leading-relaxed">
                   Upload a document under `{selectedCategory}` on the left to automatically compile overview summaries and highlights.
                 </p>
               </div>
             ) : isActiveSummaryLoading ? (
               <div className="h-full flex flex-col items-center justify-center py-20 text-gray-400">
                 <RefreshCw className="w-6 h-6 animate-spin mb-3 text-brand-purple" />
-                <p className="text-xs font-semibold text-gray-500">AI is compiling {selectedCategory} insights...</p>
+                <p className="text-xs font-semibold text-gray-400">AI is compiling {selectedCategory} insights...</p>
               </div>
             ) : !activeSummary ? (
               <div className="h-full flex flex-col items-center justify-center py-20 text-center text-gray-400">
                 <Sparkles className="w-8 h-8 mb-2 text-brand-purple opacity-30 animate-pulse" />
-                <p className="text-xs font-semibold">Compiling overview data...</p>
+                <p className="text-xs font-semibold text-gray-400">Compiling overview data...</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {/* Executive Summary */}
                 {activeSummary.summary && (
-                  <div className="bg-gradient-to-br from-purple-50/50 to-indigo-50/30 p-4 border border-indigo-100/50 rounded-2xl shadow-sm">
-                    <h3 className="font-bold text-xs text-brand-purple uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <div className="bg-gradient-to-br from-blue-950/20 to-indigo-950/15 p-4 border border-blue-900/35 rounded-2xl shadow-lg shadow-blue-500/5">
+                    <h3 className="font-bold text-xs text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" />
                       Executive Summary
                     </h3>
@@ -637,13 +724,25 @@ export default function MyDemoPage() {
                   </div>
                 )}
 
+                {/* KPI Cards Grid */}
+                {Array.isArray(activeSummary.kpi_cards) && activeSummary.kpi_cards.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {activeSummary.kpi_cards.map((card, i) => (
+                      <div key={i} className="bg-[#111827]/40 border border-white/5 p-3 rounded-xl shadow-md flex flex-col justify-center min-w-0 glass-panel-hover">
+                        <span className="text-[9px] text-gray-400 font-semibold uppercase tracking-wider truncate">{card.title}</span>
+                        <span className="text-base font-extrabold text-white mt-1 truncate tracking-tight">{card.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Important Highlights */}
                 {Array.isArray(activeSummary.important_highlights) && activeSummary.important_highlights.length > 0 && (
-                  <div className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm">
-                    <h4 className="font-bold text-xs text-gray-900 mb-2">📊 Key Highlights</h4>
+                  <div className="bg-[#111827]/40 border border-white/5 p-4 rounded-xl shadow-md">
+                    <h4 className="font-bold text-xs text-white mb-2">📊 Key Highlights</h4>
                     <ul className="space-y-2">
                       {activeSummary.important_highlights.map((item, i) => (
-                        <li key={i} className="text-xs text-gray-600 flex items-start gap-2 leading-relaxed">
+                        <li key={i} className="text-xs text-gray-300 flex items-start gap-2 leading-relaxed">
                           <span className="text-brand-purple font-extrabold mt-0.5">•</span>
                           {renderBulletItem(item)}
                         </li>
@@ -654,15 +753,15 @@ export default function MyDemoPage() {
 
                 {/* Decisions Made */}
                 {Array.isArray(activeSummary.decisions) && activeSummary.decisions.length > 0 && (
-                  <div className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm">
-                    <h4 className="font-bold text-xs text-green-800 mb-2 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                  <div className="bg-[#111827]/40 border border-white/5 p-4 rounded-xl shadow-md">
+                    <h4 className="font-bold text-xs text-green-400 mb-2 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
                       Decisions Made
                     </h4>
                     <ul className="space-y-2">
                       {activeSummary.decisions.map((item, i) => (
-                        <li key={i} className="text-xs text-gray-600 flex items-start gap-2 leading-relaxed">
-                          <span className="text-green-500 font-extrabold mt-0.5">•</span>
+                        <li key={i} className="text-xs text-gray-300 flex items-start gap-2 leading-relaxed">
+                          <span className="text-green-400 font-extrabold mt-0.5">•</span>
                           {renderBulletItem(item)}
                         </li>
                       ))}
@@ -672,11 +771,11 @@ export default function MyDemoPage() {
 
                 {/* Pending Tasks */}
                 {Array.isArray(activeSummary.pending_tasks) && activeSummary.pending_tasks.length > 0 && (
-                  <div className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm">
+                  <div className="bg-[#111827]/40 border border-white/5 p-4 rounded-xl shadow-md">
                     <h4 className="font-bold text-xs text-brand-purple mb-2">📋 Pending Tasks</h4>
                     <ul className="space-y-2">
                       {activeSummary.pending_tasks.map((item, i) => (
-                        <li key={i} className="text-xs text-gray-600 flex items-start gap-2 leading-relaxed">
+                        <li key={i} className="text-xs text-gray-300 flex items-start gap-2 leading-relaxed">
                           <span className="text-brand-purple font-extrabold mt-0.5">•</span>
                           {renderBulletItem(item)}
                         </li>
@@ -687,11 +786,11 @@ export default function MyDemoPage() {
 
                 {/* Risks */}
                 {Array.isArray(activeSummary.risks) && activeSummary.risks.length > 0 && (
-                  <div className="bg-red-50/30 border border-red-100/50 p-4 rounded-xl shadow-sm">
-                    <h4 className="font-bold text-xs text-red-700 mb-2">⚠️ Risks & Warnings</h4>
+                  <div className="bg-red-950/20 border border-red-900/35 p-4 rounded-xl shadow-md">
+                    <h4 className="font-bold text-xs text-red-400 mb-2">⚠️ Risks & Warnings</h4>
                     <ul className="space-y-2">
                       {activeSummary.risks.map((item, i) => (
-                        <li key={i} className="text-xs text-red-600 flex items-start gap-2 leading-relaxed font-medium">
+                        <li key={i} className="text-xs text-gray-300 flex items-start gap-2 leading-relaxed font-medium">
                           <span className="text-red-400 font-extrabold mt-0.5">•</span>
                           {renderBulletItem(item)}
                         </li>
@@ -702,14 +801,14 @@ export default function MyDemoPage() {
 
                 {/* Missing Documentation */}
                 {Array.isArray(activeSummary.missing_documentation) && activeSummary.missing_documentation.length > 0 && (
-                  <div className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm">
-                    <h4 className="font-bold text-xs text-gray-800 mb-2 flex items-center gap-1">
+                  <div className="bg-[#111827]/40 border border-white/5 p-4 rounded-xl shadow-md">
+                    <h4 className="font-bold text-xs text-gray-300 mb-2 flex items-center gap-1">
                       <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
                       Missing Documentation
                     </h4>
                     <ul className="space-y-2">
                       {activeSummary.missing_documentation.map((item, i) => (
-                        <li key={i} className="text-xs text-gray-600 flex items-start gap-2 leading-relaxed">
+                        <li key={i} className="text-xs text-gray-300 flex items-start gap-2 leading-relaxed">
                           <span className="text-gray-400 font-extrabold mt-0.5">•</span>
                           {renderBulletItem(item)}
                         </li>
@@ -723,59 +822,82 @@ export default function MyDemoPage() {
         </section>
 
         {/* Pane 3 (Right): Chat Panel */}
-        <section className="w-[38%] bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-gray-200 bg-gray-50/50 shrink-0 flex items-center justify-between">
-            <h2 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+        <section className="w-[38%] bg-[#1A2235]/40 backdrop-blur-md border border-white/5 rounded-2xl flex flex-col overflow-hidden shadow-2xl shadow-blue-500/5">
+          <div className="p-4 border-b border-white/5 bg-[#111827]/40 shrink-0 flex items-center justify-between">
+            <h2 className="font-extrabold text-white text-sm flex items-center gap-2 tracking-tight">
               <MessageSquare className="w-4 h-4 text-brand-orange" />
               AI Chat
             </h2>
-            <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+            <span className="text-[10px] font-bold text-gray-400 bg-white/5 border border-white/5 px-2.5 py-1 rounded-full">
               Scoped to {selectedCategory}
             </span>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-transparent">
             {currentCategoryFiles.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 max-w-xs mx-auto">
-                <div className="w-12 h-12 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center mb-3">
-                  <MessageCircle className="w-6 h-6 text-brand-orange" />
+                <div className="w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-3">
+                  <MessageCircle className="w-6 h-6 text-orange-400" />
                 </div>
-                <h3 className="font-bold text-sm text-gray-700 mb-1">No documents in {selectedCategory}</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <h3 className="font-extrabold text-sm text-white mb-1 tracking-tight">No documents in {selectedCategory}</h3>
+                <p className="text-xs text-gray-400 leading-relaxed">
                   You must upload at least one document under the `{selectedCategory}` category on the left to start chatting with the AI.
                 </p>
               </div>
             ) : activeChat.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 max-w-xs mx-auto">
-                <div className="w-12 h-12 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center mb-3">
-                  <MessageCircle className="w-6 h-6 text-brand-orange" />
+                <div className="w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-3">
+                  <MessageCircle className="w-6 h-6 text-orange-400" />
                 </div>
-                <h3 className="font-bold text-sm text-gray-700 mb-1">Chat Scoped to {selectedCategory}</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <h3 className="font-extrabold text-sm text-white mb-1 tracking-tight">Chat Scoped to {selectedCategory}</h3>
+                <p className="text-xs text-gray-400 leading-relaxed">
                   Ask a question to search across the {currentCategoryFiles.length} file(s) uploaded under `{selectedCategory}`.
                 </p>
               </div>
             ) : (
               activeChat.map((msg, idx) => (
                 <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div 
-                    className={`max-w-[90%] rounded-2xl px-4 py-2.5 shadow-sm text-xs leading-relaxed ${
-                      msg.role === 'user' 
-                        ? 'bg-[#1A0B54] text-white rounded-br-none font-medium' 
-                        : 'bg-gray-100 text-gray-800 rounded-bl-none border border-gray-100 font-medium'
-                    }`}
-                  >
-                    <div className="prose prose-sm max-w-none break-words whitespace-pre-line" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br/>') }} />
+                  <div className="flex items-center gap-2 max-w-[90%] group relative">
+                    {msg.role === 'user' && msg.id && (
+                      <button
+                        onClick={() => handleDeleteQuery(msg.id!)}
+                        className="p-1 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all duration-200 focus:outline-none shrink-0"
+                        title="Delete chat query"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <div 
+                      className={`rounded-2xl px-4 py-2.5 shadow-sm text-xs leading-relaxed ${
+                        msg.role === 'user' 
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-none font-medium shadow-md shadow-blue-500/10' 
+                          : 'bg-white/5 text-gray-200 rounded-bl-none border border-white/5 font-medium'
+                      }`}
+                    >
+                      <div className="prose prose-sm max-w-none break-words whitespace-pre-line" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br/>') }} />
+                    </div>
                   </div>
+                  {msg.role === 'ai' && msg.visualization && (
+                    <div className="mt-2 w-full max-w-[90%] shrink-0 group/chart relative">
+                      <ChartRenderer visualization={msg.visualization} />
+                      <button
+                        onClick={() => setExpandedVisualization(msg.visualization)}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-[#111827]/80 hover:bg-[#111827] text-gray-400 hover:text-white border border-white/10 opacity-0 group-hover/chart:opacity-100 transition-all duration-200 shadow-md cursor-pointer flex items-center justify-center"
+                        title="Expand visualization"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {Array.from(new Set(msg.sources.map((s: any) => s.fileName))).map((fileName: any, sIdx: number) => (
                         <span 
                           key={sIdx} 
-                          className="inline-flex items-center gap-1 text-[9px] bg-gray-50 border border-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold shadow-sm"
+                          className="inline-flex items-center gap-1 text-[9px] bg-white/5 border border-white/5 text-gray-400 px-2 py-0.5 rounded-full font-bold hover:bg-white/10 transition-colors shadow-md shadow-black/10 cursor-pointer"
                         >
-                          <FileText className="w-2.5 h-2.5 text-brand-purple" />
+                          <span className="text-[10px]">{getFileEmoji(fileName, '')}</span>
                           {fileName}
                         </span>
                       ))}
@@ -786,7 +908,7 @@ export default function MyDemoPage() {
             )}
             {isAsking && (
               <div className="flex items-start">
-                <div className="bg-gray-100 text-gray-800 rounded-2xl rounded-bl-none px-4 py-2.5 border border-gray-100 shadow-sm flex items-center gap-2 text-xs font-semibold text-gray-500">
+                <div className="bg-white/5 text-gray-300 rounded-2xl rounded-bl-none px-4 py-2.5 border border-white/5 shadow-md flex items-center gap-2 text-xs font-semibold">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand-purple" />
                   AlphaAssistant is thinking...
                 </div>
@@ -796,12 +918,12 @@ export default function MyDemoPage() {
           </div>
 
           {/* Form input */}
-          <div className="p-3 border-t border-gray-200 bg-white shrink-0">
+          <div className="p-3 border-t border-white/5 bg-[#111827]/40 shrink-0">
             <form onSubmit={handleAsk} className="relative flex items-center">
               <input
                 type="text"
                 placeholder={currentCategoryFiles.length === 0 ? "Upload documents first to start asking..." : `Ask a question about ${selectedCategory}...`}
-                className="w-full bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-brand-blue/50 focus:border-brand-blue disabled:opacity-50 disabled:bg-gray-100 font-medium"
+                className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-full pl-4 pr-10 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent disabled:opacity-50 disabled:bg-white/5 font-medium transition-all duration-200"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 disabled={currentCategoryFiles.length === 0 || isAsking}
@@ -809,7 +931,7 @@ export default function MyDemoPage() {
               <button
                 type="submit"
                 disabled={!question.trim() || currentCategoryFiles.length === 0 || isAsking}
-                className="absolute right-1.5 p-2 rounded-full bg-[#1A0B54] text-white hover:bg-[#2c1585] disabled:opacity-50 transition-colors flex items-center justify-center shadow-sm"
+                className="absolute right-1.5 p-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center shadow-md shadow-blue-500/10"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
@@ -818,6 +940,66 @@ export default function MyDemoPage() {
         </section>
 
       </main>
+
+      {deleteCandidateId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#1A2235] border border-white/10 rounded-2xl max-w-sm w-full p-6 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <h3 className="font-extrabold text-white text-base tracking-tight mb-2">Delete Conversation Pair?</h3>
+            <p className="text-xs text-gray-400 leading-relaxed mb-6 font-medium">
+              This will permanently remove both the query and its corresponding AI response from your workspace history. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteCandidateId(null)}
+                className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-gray-300 hover:text-white hover:bg-white/10 text-xs font-semibold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteQuery}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-md shadow-red-600/20 transition-all hover:scale-102 active:scale-98 cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {expandedVisualization && (
+        <div 
+          onClick={() => setExpandedVisualization(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#0B1220] border border-white/10 rounded-2xl max-w-3xl w-full flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+          >
+            {/* Modal Header */}
+            <div className="p-5 border-b border-white/5 bg-[#111827]/40 flex justify-between items-center">
+              <div>
+                <h3 className="font-extrabold text-white text-base tracking-tight">{expandedVisualization.title || 'Data Visualization'}</h3>
+                <p className="text-xs text-gray-400 mt-0.5 font-medium uppercase tracking-wider">
+                  Detailed view of {expandedVisualization.type} chart
+                </p>
+              </div>
+              <button 
+                onClick={() => setExpandedVisualization(null)} 
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg border border-transparent hover:border-white/5 transition-all duration-200 cursor-pointer"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[70vh] flex items-center justify-center bg-[#111827]/10">
+              <div className="w-full max-w-2xl bg-transparent">
+                <ChartRenderer visualization={expandedVisualization} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -70,18 +70,22 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F9F9F9] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <main className="min-h-screen bg-[#0B1220] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+      {/* Background gradients for login page */}
+      <div className="absolute top-[-20%] left-[-20%] w-[60vw] h-[60vw] rounded-full bg-blue-600/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[60vw] h-[60vw] rounded-full bg-purple-600/5 blur-[120px] pointer-events-none" />
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <Link href="/" className="flex justify-center items-center gap-2 mb-6">
-          <div className="w-8 h-8 bg-gradient-to-br from-brand-blue to-brand-purple rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-gradient-to-br from-brand-blue to-brand-purple rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20">
             <span className="text-white font-bold text-sm">AA</span>
           </div>
           <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-brand-blue to-brand-purple">Alpha Assistant</span>
         </Link>
-        <h2 className="text-center text-3xl font-extrabold text-brand-primary">
+        <h2 className="text-center text-3xl font-extrabold text-white tracking-tight">
           {isSignUp ? 'Create your account' : 'Welcome back'}
         </h2>
-        <p className="mt-2 text-center text-sm text-[#83799E]">
+        <p className="mt-2 text-center text-sm text-gray-400">
           {isSignUp 
             ? 'Start capturing organizational knowledge in one place' 
             : 'Access your organization’s centralized AI memory'
@@ -89,14 +93,14 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-[0_3px_9.1px_rgba(63,74,126,0.05),0_1px_29px_rgba(63,74,126,0.10)] sm:rounded-2xl sm:px-10 border border-gray-100">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="bg-[#1A2235]/50 backdrop-blur-md py-8 px-4 sm:rounded-2xl sm:px-10 border border-white/5 shadow-2xl shadow-blue-500/5">
           
           {errorMsg && (
             <div className={`mb-4 p-3 rounded-xl flex items-start gap-2 text-sm ${
               errorMsg.includes('Verification link') 
-                ? 'bg-blue-50 text-blue-800 border border-blue-200' 
-                : 'bg-red-50 text-red-600 border border-red-200'
+                ? 'bg-blue-950/40 text-blue-400 border border-blue-900/40' 
+                : 'bg-red-950/40 text-red-400 border border-red-900/40'
             }`}>
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
@@ -106,7 +110,7 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 rounded-xl bg-white text-sm font-semibold text-[#1A0B54] hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-white/10 rounded-xl bg-white/5 text-sm font-semibold text-white hover:bg-white/10 transition-all duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" width="24" height="24">
               <path
@@ -131,16 +135,16 @@ export default function LoginPage() {
 
           <div className="mt-6 relative">
             <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-gray-200" />
+              <div className="w-full border-t border-white/5" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-[#83799E]">Or continue with email</span>
+              <span className="px-2 bg-[#1A2235] text-gray-400 rounded-md">Or continue with email</span>
             </div>
           </div>
 
           <form className="mt-6 space-y-4" onSubmit={handleEmailAuth}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-brand-primary">
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-300">
                 Email address
               </label>
               <div className="mt-1 relative">
@@ -153,15 +157,15 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
-                  className="appearance-none block w-full px-4 py-3 pl-10 border border-gray-200 rounded-xl placeholder-[#83799E] text-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent text-sm disabled:opacity-50"
+                  className="appearance-none block w-full px-4 py-3 pl-10 border border-white/5 bg-white/5 rounded-xl placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:opacity-50 transition-all duration-200"
                   placeholder="name@company.com"
                 />
-                <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-[#83799E]" />
+                <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-500" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-brand-primary">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-300">
                 Password
               </label>
               <div className="mt-1 relative">
@@ -174,17 +178,17 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
-                  className="appearance-none block w-full px-4 py-3 pl-10 border border-gray-200 rounded-xl placeholder-[#83799E] text-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent text-sm disabled:opacity-50"
+                  className="appearance-none block w-full px-4 py-3 pl-10 border border-white/5 bg-white/5 rounded-xl placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:opacity-50 transition-all duration-200"
                   placeholder="••••••••"
                 />
-                <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-[#83799E]" />
+                <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-500" />
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-[#1A0B54] hover:bg-[#2b177d] focus:outline-none transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 focus:outline-none transition-all duration-200 hover:-translate-y-0.5 shadow-lg shadow-blue-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -200,7 +204,7 @@ export default function LoginPage() {
             <button
               onClick={() => setIsSignUp(!isSignUp)}
               disabled={loading}
-              className="font-semibold text-brand-blue hover:text-brand-purple transition-colors outline-none"
+              className="font-semibold text-blue-400 hover:text-purple-400 transition-colors outline-none"
             >
               {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
             </button>

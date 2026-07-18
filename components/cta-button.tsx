@@ -19,9 +19,9 @@ export function CTAButton({
 
   const variants = {
     primary:
-      'bg-brand-primary text-white hover:shadow-lg hover:scale-105 active:scale-95',
+      'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/35 hover:-translate-y-0.5 active:translate-y-0 hover:scale-[1.03] active:scale-[0.98]',
     secondary:
-      'bg-white text-brand-primary border-2 border-brand-primary hover:bg-brand-surface transition-colors',
+      'bg-white/5 text-white border border-white/10 hover:bg-white/10 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200',
   }
 
   const sizes = {

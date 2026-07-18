@@ -3,6 +3,7 @@ import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
 import * as xlsx from 'xlsx'
 import { createClient } from '@/lib/supabase/server'
+import { parseEml } from '@/lib/eml-parser'
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,6 +45,26 @@ export async function POST(req: NextRequest) {
     } else if (extension === 'txt') {
       content = buffer.toString('utf-8')
       sourceType = 'txt'
+    } else if (extension === 'eml') {
+      const emlContent = buffer.toString('utf-8')
+      const parsedEmail = parseEml(emlContent)
+      content = [
+        `Subject:`,
+        `${parsedEmail.subject}`,
+        ``,
+        `From:`,
+        `${parsedEmail.from}`,
+        ``,
+        `To:`,
+        `${parsedEmail.to}`,
+        ``,
+        `Date:`,
+        `${parsedEmail.date}`,
+        ``,
+        `Body:`,
+        `${parsedEmail.body}`
+      ].join('\n')
+      sourceType = 'email'
     } else {
       content = buffer.toString('utf-8')
       sourceType = 'document'

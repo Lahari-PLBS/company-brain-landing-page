@@ -142,7 +142,8 @@ Provide a structured JSON output with precisely the following keys:
 - pending_tasks: (A list of pending actions or tasks related to this category, explicitly found in files)
 - risks: (A list of risks, warnings, or complications related to this category, explicitly found in files)
 - missing_documentation: (A list of specific documents or figures that are explicitly mentioned in the text of the files as missing, incomplete, or unavailable. Do NOT list the active files themselves, do NOT list general context/purpose/scope gaps, and do NOT list absent categories. If no specific files are explicitly referenced as missing in the texts, return an empty array \`[]\`.)
-- important_highlights: (A list of notable metrics, figures, or highlights in this category, explicitly found in files)`
+- important_highlights: (A list of notable metrics, figures, or highlights in this category, explicitly found in files)
+- kpi_cards: (An array of objects representing high-level key performance metrics or counts, e.g., [{"title": "Total Revenue", "value": "₹2.4 Cr"}]. Only include this if meaningful numerical metrics exist in the context, otherwise return an empty array \`[]\`.)`
 
   const generateWithRetry = async (params: any, retries = 3) => {
     for (let i = 0; i < retries; i++) {

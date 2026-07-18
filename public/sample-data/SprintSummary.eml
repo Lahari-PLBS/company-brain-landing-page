@@ -1,0 +1,20 @@
+From: meetings-noreply@google.com
+To: team@company.com
+Date: Fri, 17 Jul 2026 10:00:00 +0000
+Subject: Sprint Planning Meeting Summary
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Meeting Summary:
+We held the Project Apollo launch status alignment meeting today.
+
+Decisions:
+- Launch postponed to August 1st to allow database migration completion.
+- Budget approved for the extra hosting instances.
+
+Action Items:
+- Rahul will complete the API migration by next Wednesday.
+- Bhayva will draft the release announcement notes.
+
+Risks:
+- Migration delay if database lock is not resolved during staging.

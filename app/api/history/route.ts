@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       // Fetch category-scoped persistent query history
       const { data: queries, error } = await supabase
         .from('queries')
-        .select('question, answer, sources')
+        .select('id, question, answer, sources, insights')
         .eq('user_id', user.id)
         .eq('category', category)
         .order('created_at', { ascending: true })
@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
 
       const messages: any[] = []
       queries?.forEach((q) => {
-        messages.push({ role: 'user', content: q.question })
-        messages.push({ role: 'ai', content: q.answer, sources: q.sources || [] })
+        messages.push({ id: q.id, role: 'user', content: q.question })
+        messages.push({ id: q.id, role: 'ai', content: q.answer, sources: q.sources || [], visualization: q.insights?.visualization })
       })
 
       return NextResponse.json({ messages })
@@ -75,3 +75,38 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'Query ID is required' }, { status: 400 })
+    }
+
+    const { error } = await supabase
+      .from('queries')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (error) {
+      console.error('Error deleting chat message:', error)
+      return NextResponse.json({ error: 'Failed to delete chat message' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
+}
+

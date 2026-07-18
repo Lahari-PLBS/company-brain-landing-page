@@ -84,31 +84,27 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0B1220] text-gray-100">
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 py-24 lg:py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 lg:py-16">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <h1 className="text-5xl lg:text-6xl font-bold text-brand-primary leading-tight">
+            <div className="space-y-5">
+              <h1 className="text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
                 Turn Scattered Knowledge Into{' '}
                 <span
-                  className="bg-clip-text text-transparent"
-                  style={{
-                    backgroundImage:
-                      'linear-gradient(90deg, #2BA7FF, #CA45FF 50%, #FE881B)',
-                  }}
+                  className="bg-clip-text text-transparent bg-gradient-to-r from-brand-blue via-brand-purple to-brand-orange"
                 >
                   One AI Memory
                 </span>
               </h1>
 
-              <p className="text-lg text-brand-secondary leading-relaxed">
+              <p className="text-lg text-gray-400 font-medium leading-relaxed">
                 Search across emails, documents, chats, meeting notes, and PDFs in one place. Get answers grounded in your company knowledge.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-1">
                 <Link href="/dashboard" className="inline-flex">
                   <CTAButton variant="primary" size="lg">
                     Demo
@@ -125,13 +121,13 @@ export default function Home() {
             </div>
 
             {/* Product Mockup */}
-            <div className="relative h-96 lg:h-[500px] bg-brand-surface rounded-2xl border border-gray-200 flex items-center justify-center overflow-hidden">
+            <div className="relative h-96 lg:h-[500px] bg-[#1A2235]/40 backdrop-blur-md rounded-2xl border border-white/5 flex items-center justify-center overflow-hidden shadow-2xl shadow-blue-500/5 group hover:border-white/10 transition-all duration-300">
               <div className="absolute inset-0 bg-gradient-to-br from-brand-blue/10 via-transparent to-brand-purple/10"></div>
               <div className="relative text-center z-10">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-blue to-brand-purple mb-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-blue to-brand-purple mb-4 shadow-lg shadow-blue-500/20">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
-                <p className="text-brand-secondary font-medium">
+                <p className="text-gray-300 font-semibold uppercase tracking-wider text-xs">
                   AlphaAssistant Dashboard
                 </p>
               </div>
@@ -141,21 +137,21 @@ export default function Home() {
       </section>
 
       {/* Trust Strip */}
-      <section className="bg-brand-surface border-y border-gray-200 py-8">
+      <section className="bg-[#111827]/40 border-y border-white/5 py-8">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="text-brand-secondary font-medium">
+          <p className="text-gray-400 font-medium tracking-wide">
             Built for modern teams handling messy knowledge
           </p>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="max-w-7xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-brand-primary mb-4">
+      <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 py-14">
+        <div className="text-center mb-10">
+          <h2 className="text-4xl font-extrabold text-white tracking-tight mb-4">
             Powerful Features for Your Team
           </h2>
-          <p className="text-lg text-brand-secondary max-w-2xl mx-auto">
+          <p className="text-lg text-gray-400 max-w-2xl mx-auto font-medium">
             Everything you need to turn company knowledge into actionable insights
           </p>
         </div>
@@ -175,11 +171,11 @@ export default function Home() {
       {/* How It Works */}
       <section
         id="how-it-works"
-        className="bg-brand-surface border-y border-gray-200 py-24"
+        className="bg-[#111827]/40 border-y border-white/5 py-14"
       >
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-brand-primary mb-4">
+          <div className="text-center mb-10">
+            <h2 className="text-4xl font-extrabold text-white tracking-tight mb-4">
               How It Works
             </h2>
           </div>
@@ -203,13 +199,13 @@ export default function Home() {
               },
             ].map((item, i) => (
               <div key={i} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-brand-blue to-brand-purple text-white font-bold mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-brand-blue to-brand-purple text-white font-extrabold mb-4 shadow-md shadow-blue-500/10">
                   {item.step}
                 </div>
-                <h3 className="text-xl font-bold text-brand-primary mb-2">
+                <h3 className="text-xl font-bold text-white mb-2 tracking-tight">
                   {item.title}
                 </h3>
-                <p className="text-brand-secondary">{item.description}</p>
+                <p className="text-gray-400 text-sm leading-relaxed">{item.description}</p>
               </div>
             ))}
           </div>
@@ -217,10 +213,10 @@ export default function Home() {
       </section>
 
       {/* Use Cases */}
-      <section id="use-cases" className="bg-brand-surface border-y border-gray-200 py-24">
+      <section id="use-cases" className="bg-[#111827]/40 border-y border-white/5 py-14">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-brand-primary mb-4">
+          <div className="text-center mb-10">
+            <h2 className="text-4xl font-extrabold text-white tracking-tight mb-4">
               Built for Every Role
             </h2>
           </div>
@@ -230,9 +226,9 @@ export default function Home() {
               <DashboardCard
                 key={i}
                 title={useCase.title}
-                className="bg-white hover:border-brand-blue"
+                className="hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300"
               >
-                <p className="text-brand-secondary">{useCase.description}</p>
+                <p className="text-gray-400 text-sm leading-relaxed">{useCase.description}</p>
               </DashboardCard>
             ))}
           </div>
@@ -240,11 +236,11 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="max-w-7xl mx-auto px-6 py-24 text-center">
-        <h2 className="text-4xl font-bold text-brand-primary mb-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 pb-8 text-center">
+        <h2 className="text-4xl font-extrabold text-white tracking-tight mb-6">
           Never Lose Company Knowledge Again
         </h2>
-        <p className="text-lg text-brand-secondary mb-8 max-w-2xl mx-auto">
+        <p className="text-lg text-gray-400 mb-5 max-w-2xl mx-auto font-medium">
           Join modern teams that are using AlphaAssistant to unlock their collective intelligence
         </p>
         <Link href="/dashboard" className="inline-flex">
@@ -252,6 +248,8 @@ export default function Home() {
             Launch Demo
           </CTAButton>
         </Link>
+        {/* 4cm spacer below Launch Demo button */}
+        <div style={{ height: '4cm' }} />
       </section>
     </div>
   )

@@ -15,8 +15,8 @@ export function DashboardCard({
   variant = 'default',
 }: DashboardCardProps) {
   const variantStyles = {
-    default: 'bg-white border border-gray-200',
-    highlight: 'bg-brand-surface border-0',
+    default: 'glass-panel glass-panel-hover',
+    highlight: 'bg-[#1A2235]/65 border border-white/10 shadow-lg shadow-purple-500/5',
   }
 
   return (
@@ -26,14 +26,8 @@ export function DashboardCard({
         variantStyles[variant],
         className
       )}
-      style={{
-        boxShadow:
-          variant === 'default'
-            ? '0 3px 9.1px rgba(63, 74, 126, 0.05), 0 1px 29px rgba(63, 74, 126, 0.10)'
-            : undefined,
-      }}
     >
-      {title && <h4 className="font-semibold text-brand-primary mb-4">{title}</h4>}
+      {title && <h4 className="font-bold text-base text-white tracking-tight mb-4">{title}</h4>}
       {children}
     </div>
   )
