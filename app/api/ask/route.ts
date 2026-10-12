@@ -7,6 +7,7 @@ import { llm, getModelName } from '@/lib/llm'
 import { createClient } from '@/lib/supabase/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { askCache, computeFilesFingerprint } from '@/lib/cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,6 +68,11 @@ export async function POST(req: NextRequest) {
       snippet: chunk.text,
     }))
 
+    const filesFingerprint = computeFilesFingerprint(filesToSearch)
+    const normalizedQuestion = question.trim().toLowerCase()
+    const askCacheKey = `ask:${user ? user.id : 'demo'}:${category}:${filesFingerprint}:${normalizedQuestion}`
+    const cachedResponse = askCache.get(askCacheKey)
+
     // Capture cookies statically before stream starts to prevent dynamic server usage errors
     let allCookies: any[] = []
     if (process.env.TEST_ENV !== 'true') {
@@ -88,6 +94,20 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
+          // If cached response exists and files haven't changed, stream immediately from cache
+          if (cachedResponse) {
+            console.log(`[Cache HIT] Q&A response for "${question.substring(0, 30)}..." served from memoized cache`)
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', data: cachedResponse.answer })}\n\n`))
+            if (cachedResponse.insights?.visualization) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'visualization', data: cachedResponse.insights.visualization })}\n\n`))
+            }
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'sources', data: cachedResponse.sources })}\n\n`))
+            controller.enqueue(encoder.encode(`data: [DONE]\n\n`))
+            return
+          }
+
+          console.log(`[Cache MISS] Computing Q&A response for "${question.substring(0, 30)}..." with model`)
+
           // Resolve category-scoped conversation_id if conversationId is not provided
           let activeConvId = conversationId
           if (user && category && !activeConvId && body.mode !== 'demo') {
@@ -226,6 +246,15 @@ Ensure the data contains actual numbers extracted from the context. Do not wrap 
             } catch (err: any) {
               console.error('Exception during Supabase insert:', err)
             }
+          }
+
+          // Memoize response in askCache
+          if (answer) {
+            askCache.set(askCacheKey, {
+              answer,
+              insights,
+              sources: formattedSources
+            })
           }
 
           // Finish stream

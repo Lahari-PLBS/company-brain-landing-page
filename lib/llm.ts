@@ -1,22 +1,20 @@
 import OpenAI from 'openai';
 
-const mistralModel = process.env.MISTRAL_MODEL;
+const model = process.env.LLM_MODEL || process.env.MISTRAL_MODEL || 'openai/gpt-oss-120b';
+const baseURL = process.env.LLM_BASE_URL || process.env.MISTRAL_BASE_URL || 'https://api.groq.com/openai/v1';
+const apiKey = process.env.LLM_API_KEY || process.env.GROQ_API_KEY || process.env.MISTRAL_API_KEY || 'ollama';
 
-if (!mistralModel) {
-  throw new Error('MISTRAL_MODEL environment variable must be set.');
-}
-
-const timeoutMs = process.env.MISTRAL_TIMEOUT_MS 
-  ? parseInt(process.env.MISTRAL_TIMEOUT_MS, 10) 
-  : 300000;
+const timeoutMs = (process.env.LLM_TIMEOUT_MS || process.env.MISTRAL_TIMEOUT_MS)
+  ? parseInt((process.env.LLM_TIMEOUT_MS || process.env.MISTRAL_TIMEOUT_MS)!, 10)
+  : 120000;
 
 export const llm = new OpenAI({
-  baseURL: process.env.MISTRAL_BASE_URL!,
-  apiKey: process.env.MISTRAL_API_KEY || "ollama",
+  baseURL,
+  apiKey,
   timeout: timeoutMs,
   defaultHeaders: {
     "ngrok-skip-browser-warning": "true",
   },
 });
 
-export const getModelName = () => mistralModel;
+export const getModelName = () => model;

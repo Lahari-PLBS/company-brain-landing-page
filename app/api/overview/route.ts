@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { chunkFiles } from '@/lib/chunk'
 import { llm, getModelName } from '@/lib/llm'
 import { loadDemoFiles } from '@/lib/sample-data'
+import { overviewCache, computeFilesFingerprint } from '@/lib/cache'
 
 const categoriesConfig = [
   { name: 'Staff', keywords: ['employee', 'attendance', 'payroll', 'staff'] },
@@ -108,7 +109,17 @@ async function processOverview(mode: string, category: string, bodyFiles?: any[]
     })
   }
 
-  // 4. Map and chunk files
+  // 4. Memoization: Check if files for this category have changed
+  const filesFingerprint = computeFilesFingerprint(filteredFiles)
+  const cacheKey = `overview:${mode}:${category}:${filesFingerprint}`
+  const cachedInsights = overviewCache.get(cacheKey)
+  if (cachedInsights) {
+    console.log(`[Cache HIT] Overview for category "${category}" served from cache (fingerprint: ${filesFingerprint.substring(0, 8)})`)
+    return NextResponse.json({ insights: cachedInsights, cached: true })
+  }
+  console.log(`[Cache MISS] Computing overview for category "${category}" with model (fingerprint: ${filesFingerprint.substring(0, 8)})`)
+
+  // 5. Map and chunk files
   const formattedFiles = filteredFiles.map(f => ({
     fileName: f.file_name || f.fileName,
     content: f.content || '',
@@ -185,6 +196,8 @@ Provide a structured JSON output with precisely the following keys:
   let insights = {}
   try {
     insights = JSON.parse(insightsText)
+    // Save to in-memory cache
+    overviewCache.set(cacheKey, insights)
   } catch (e) {
     console.error('Failed to parse insights JSON', e)
   }
